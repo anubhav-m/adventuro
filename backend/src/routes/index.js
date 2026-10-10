@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getHealth } from '../controllers/health.controller.js';
 import { authRouter } from './auth.routes.js';
+import { bookingRouter } from './booking.routes.js';
 import { gearRouter } from './gear.routes.js';
 import { newsletterRouter } from './newsletter.routes.js';
 import { searchRouter } from './search.routes.js';
@@ -19,4 +20,5 @@ apiRouter.use('/tours', tourRouter);
 apiRouter.use('/gear', gearRouter);
 apiRouter.use('/taxonomies', taxonomyRouter);
 apiRouter.use('/search', searchRouter);
+apiRouter.use('/bookings', bookingRouter);
 apiRouter.use('/newsletter', newsletterRouter);

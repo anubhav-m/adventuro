@@ -21,6 +21,12 @@ export const BOOKING_STATUS = Object.freeze({
   COMPLETED: 'completed',
 });
 
+export const BOOKING_NUMBER_PREFIX = 'ADV';
+export const BOOKING_SEQUENCE_DIGITS = 6;
+export const BOOKING_NUMBER_REGEX = new RegExp(
+  `^${BOOKING_NUMBER_PREFIX}-(?:${VERTICAL_CODES.join('|')})-\\d{4}-\\d{${BOOKING_SEQUENCE_DIGITS},}$`,
+);
+
 export const BOOKING_STATUS_TRANSITIONS = Object.freeze({
   [BOOKING_STATUS.CONFIRMED]: Object.freeze([BOOKING_STATUS.CANCELLED, BOOKING_STATUS.COMPLETED]),
   [BOOKING_STATUS.CANCELLED]: Object.freeze([]),

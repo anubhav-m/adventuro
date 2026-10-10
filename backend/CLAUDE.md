@@ -98,6 +98,7 @@ backend/
 │   ├── models/                # User, Vertical, Tour, Gear, Taxonomy, Booking, Counter, GearClick, NewsletterSubscriber
 │   │                          # + schemaHelpers.js (toJSONOptions, imageSchema, integerValidator, isHttpsUrl)
 │   ├── validators/            # Zod schemas per domain (+ common.js: objectId, slug, pagination, phone)
+│   ├── assets/fonts/          # Noto Sans (regular, bold) + OFL.txt, embedded in the ticket PDF
 │   ├── middlewares/
 │   │   ├── auth.js            # requireAuth, optionalAuth, requireAdmin, requireCompleteProfile
 │   │   ├── validate.js
@@ -112,6 +113,7 @@ backend/
 │       ├── escapeRegex.js     # escapeRegex + containsRegex / exactRegex (literal, case-insensitive)
 │       ├── pagination.js
 │       ├── dates.js           # IST "tomorrow", date-only helpers
+│       ├── format.js          # display strings: rupees, calendar date, clock time, IST date-time
 │       ├── serialize.js       # `_id` → `id`, drops `__v` for `.lean()` results
 │       └── slugify.js
 ├── scripts/seed.js            # idempotent: 6 verticals + starter taxonomies
@@ -287,10 +289,10 @@ Query rules:
 | GET | `/gear/:id/go` | goLimiter, optionalAuth | Logs a GearClick, `$inc clickCount`, then 302 to `affiliateUrl`. Inactive or unknown gear is a 404 envelope |
 | GET | `/taxonomies` | — | `?type`. `{ taxonomies }` sorted by type then name |
 | GET | `/search` | searchLimiter | `?q`. Returns `{ tours: [≤5], gear: [≤5] }` |
-| POST | `/bookings` | requireAuth, requireCompleteProfile, bookingLimiter | Body `{ tourId, tierId, travelers, startDate 'YYYY-MM-DD' }` |
-| GET | `/bookings/me` | requireAuth | Paginated, newest first |
-| GET | `/bookings/:bookingNumber` | requireAuth | Owner (or admin) only. Others get 404 |
-| GET | `/bookings/:bookingNumber/ticket` | requireAuth | PDF (`Content-Disposition: attachment`). Owner (or admin) only |
+| POST | `/bookings` | requireAuth, requireCompleteProfile, bookingLimiter | Body `{ tourId, tierId, travelers, startDate 'YYYY-MM-DD' }`. 201 `{ booking }` |
+| GET | `/bookings/me` | requireAuth | `{ bookings }` + `meta`, newest first |
+| GET | `/bookings/:bookingNumber` | requireAuth | `{ booking }`. Owner (or admin) only. Others get 404 |
+| GET | `/bookings/:bookingNumber/ticket` | requireAuth | PDF, `Content-Disposition: attachment; filename=Adventuro-{bookingNumber}.pdf`. Owner (or admin) only |
 | POST | `/newsletter` | newsletterLimiter | Body `{ email }`. Idempotent: always 200 with the same body whether new or existing (no enumeration) |
 
 ### Admin (`/admin/*`, requireAuth + requireAdmin applied once in `routes/admin/index.js`)
@@ -326,6 +328,18 @@ When a tour or gear item's images are removed or replaced in an update, the serv
 - **Sorts:** `newest` (default) = `createdAt` desc, `price_asc` / `price_desc` = `salePrice`, `popular` = `clickCount` desc.
 - The affiliate click does not bump the gear's `updatedAt`.
 
+### Booking behavior
+
+- **Booking object** (the same shape from all three JSON endpoints): `id, bookingNumber, status, statusUpdatedAt, travelers, startDate, totalAmount, createdAt`, `snapshot { tourTitle, verticalName, verticalCode, tierName, pricePerPerson, durationDays }`, `contact { name, phone, email }`, `tour { id, slug }`, `vertical { id, key, name, code }`, `reporting { location, address, time }`.
+- `startDate` is returned as the `YYYY-MM-DD` string it was booked with, not as a timestamp.
+- `reporting` is read from the tour on every request. `snapshot`, `contact` and `totalAmount` never change after creation. If the tour document no longer exists, `tour` and `reporting` are `null`.
+- `:bookingNumber` must match `ADV-{code}-{yyyy}-{6+ digits}` exactly, otherwise 400 `VALIDATION_ERROR`.
+- An unknown tour id, an unpublished tour, and a tier id that is not on the tour all answer 409 `TOUR_UNAVAILABLE` with the same body.
+- A start date outside the window is 400 `VALIDATION_ERROR` with `errors: [{ field: 'startDate', … }]`. A failed booking never consumes a sequence number.
+- The year in the booking number is the IST year at the moment of booking (not the start date's year).
+- `bookingLimiter` sits after `requireAuth`, so it counts every `POST /bookings` attempt per user, including ones that fail validation.
+- A ticket can be downloaded in any status; the status is printed on it.
+
 ## Key business logic
 
 **Sign-in (`auth.service`)**
@@ -345,8 +359,10 @@ Any verification failure (bad token, wrong audience, unverified email, Google un
 6. Create the booking with the tour/tier snapshot and the contact snapshot from the user.
 
 **Ticket (`ticket.service`, pdfkit)**
-- Contents: booking number, status, tour, vertical, tier, travelers, start date, reporting time and location (read live from the tour), total, contact.
-- Do the ownership check **before** streaming starts, so errors are still JSON.
+- Contents: booking number, status, tour, vertical, tier, travelers, start date, duration, reporting time, location and address (read live from the tour), total with the per-person breakdown, contact, issued-at (the booking's creation time in IST).
+- Do the ownership check **before** streaming starts, so errors are still JSON. `createTicketDocument(booking)` takes the booking object described above and returns a finished PDFKit document; the controller sets the headers and pipes it.
+- One A4 page, neutral greyscale. Every free-text field is clipped to a fixed number of lines with an ellipsis, which is what guarantees a single page; keep that when adding fields.
+- The standard PDF fonts have no `₹` glyph, so Noto Sans from `src/assets/fonts/` is embedded (subsetted by PDFKit). It covers Latin, Greek and Cyrillic only; text in other scripts (e.g. a Devanagari name) will not render.
 
 **Dashboard**
 
