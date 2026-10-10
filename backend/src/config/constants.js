@@ -80,8 +80,29 @@ export const PHONE_REGEX = /^[6-9]\d{9}$/;
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+export const UPLOAD_FIELD = 'image';
+export const UPLOAD_FOLDERS = Object.freeze(['tours', 'gear', 'verticals']);
+export const IMAGE_EXTENSIONS = Object.freeze({
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+});
+// Matches only the object paths the upload endpoint generates: {folder}/{uuid}.{ext}
+export const IMAGE_PATH_REGEX = new RegExp(
+  `^(?:${UPLOAD_FOLDERS.join('|')})/[a-f0-9-]{36}\\.(?:${Object.values(IMAGE_EXTENSIONS).join('|')})$`,
+);
+
 export const LIMITS = Object.freeze({
   JSON_BODY: '100kb',
+  UPLOAD_BYTES: 5 * 1024 * 1024,
+  GALLERY_MAX: 12,
+  GEAR_IMAGES_MAX: 8,
+  LIST_ITEMS_MAX: 30,
+  ITINERARY_MAX: 60,
+  DURATION_DAYS_MAX: 365,
+  PRICE_MAX: 10_000_000,
+  GEAR_TAXONOMIES_MAX: 20,
+  GEAR_TOURS_MAX: 100,
   PAGE_LIMIT_DEFAULT: 12,
   PAGE_LIMIT_MAX: 50,
   TRAVELERS_MIN: 1,

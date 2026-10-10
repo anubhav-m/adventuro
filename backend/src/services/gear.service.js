@@ -15,7 +15,7 @@ const TAXONOMY_FIELDS = 'name slug';
 const TAXONOMY_PATHS = ['category', 'climates', 'tags'];
 const SEARCH_RESULT_FIELDS = 'name slug images mrp salePrice';
 
-const SORTS = Object.freeze({
+export const GEAR_SORTS = Object.freeze({
   [GEAR_SORT.NEWEST]: { createdAt: -1, _id: -1 },
   [GEAR_SORT.PRICE_ASC]: { salePrice: 1, _id: 1 },
   [GEAR_SORT.PRICE_DESC]: { salePrice: -1, _id: 1 },
@@ -66,7 +66,7 @@ export const listActiveGear = async (query) => {
     Gear.find(filter)
       .select(CARD_FIELDS)
       .populate(TAXONOMY_PATHS.map((path) => ({ path, select: TAXONOMY_FIELDS })))
-      .sort(SORTS[query.sort])
+      .sort(GEAR_SORTS[query.sort])
       .skip(skip)
       .limit(limit)
       .lean(),

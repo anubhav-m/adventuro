@@ -9,12 +9,12 @@ import { serialize } from '../utils/serialize.js';
 const CARD_FIELDS =
   'title slug state destination tagline durationDays difficulty coverImage topActivities startingPrice';
 const DETAIL_HIDDEN_FIELDS = '-isPublished -createdAt -updatedAt';
-const VERTICAL_SUMMARY_FIELDS = 'key name code';
+export const VERTICAL_SUMMARY_FIELDS = 'key name code';
 const SEARCH_RESULT_FIELDS = 'title slug state destination coverImage startingPrice';
 const TEXT_SEARCH_PATHS = ['title', 'state', 'destination'];
 const NEWEST_FIRST = { createdAt: -1, _id: -1 };
 
-const textSearchConditions = (q) => {
+export const textSearchConditions = (q) => {
   const pattern = containsRegex(q);
   return TEXT_SEARCH_PATHS.map((path) => ({ [path]: pattern }));
 };

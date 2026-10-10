@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getHealth } from '../controllers/health.controller.js';
+import { adminRouter } from './admin/index.js';
 import { authRouter } from './auth.routes.js';
 import { bookingRouter } from './booking.routes.js';
 import { gearRouter } from './gear.routes.js';
@@ -22,3 +23,4 @@ apiRouter.use('/taxonomies', taxonomyRouter);
 apiRouter.use('/search', searchRouter);
 apiRouter.use('/bookings', bookingRouter);
 apiRouter.use('/newsletter', newsletterRouter);
+apiRouter.use('/admin', adminRouter);

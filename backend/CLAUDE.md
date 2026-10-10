@@ -95,15 +95,17 @@ backend/
 │   │       └── newsletter.routes.js
 │   ├── controllers/           # mirrors routes/ (including admin/)
 │   ├── services/              # business logic + DB access, mirrors domains
+│   │                          # + storage.service.js (Supabase images) and admin/ (admin CRUD per domain)
 │   ├── models/                # User, Vertical, Tour, Gear, Taxonomy, Booking, Counter, GearClick, NewsletterSubscriber
 │   │                          # + schemaHelpers.js (toJSONOptions, imageSchema, integerValidator, isHttpsUrl)
-│   ├── validators/            # Zod schemas per domain (+ common.js: objectId, slug, pagination, phone)
+│   ├── validators/            # Zod schemas per domain (+ common.js: objectId, slug, pagination, phone, image, …)
+│   │                          # + admin/ (admin bodies and list queries per domain)
 │   ├── assets/fonts/          # Noto Sans (regular, bold) + OFL.txt, embedded in the ticket PDF
 │   ├── middlewares/
 │   │   ├── auth.js            # requireAuth, optionalAuth, requireAdmin, requireCompleteProfile
 │   │   ├── validate.js
 │   │   ├── rateLimiters.js
-│   │   ├── upload.js
+│   │   ├── upload.js          # receiveImage: multer (memory) + file-type sniff → req.image
 │   │   ├── notFound.js
 │   │   └── errorHandler.js
 │   └── utils/
@@ -119,7 +121,7 @@ backend/
 ├── scripts/seed.js            # idempotent: 6 verticals + starter taxonomies
 ├── tests/
 │   ├── setup.js               # mongodb-memory-server lifecycle, clears collections between tests
-│   ├── helpers/               # factories (user, tour, gear, booking), authAgent(user)
+│   ├── helpers/               # factories (user, tour, gear, booking), authAgent(user), supabaseMock
 │   └── *.test.js              # one file per route group
 ├── .env.example
 ├── eslint.config.js
@@ -300,15 +302,15 @@ Query rules:
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/admin/dashboard` | `?from&to` (default last 30 days). See Dashboard below |
-| GET / PATCH | `/admin/verticals`, `/admin/verticals/:id` | Content fields only. No create or delete |
-| GET / POST | `/admin/tours` | List includes unpublished. Filters `?vertical&q&isPublished` |
+| GET / PATCH | `/admin/verticals`, `/admin/verticals/:id` | PATCH body `{ subtitle?, description?, heroImage? }` only. No create or delete |
+| GET / POST | `/admin/tours` | List includes unpublished. Filters `?vertical(key)&q&isPublished(true\|false)&page&limit` |
 | GET / PATCH / DELETE | `/admin/tours/:id` | Delete returns 409 `RESOURCE_IN_USE` if bookings exist (unpublish instead). Delete removes the tour's images and pulls it from `gear.tours` |
-| GET / POST | `/admin/gear` | Includes inactive |
+| GET / POST | `/admin/gear` | Includes inactive. Filters `?q&category&climate&tag&tour` (all ids) `&isActive(true\|false)&sort&page&limit` |
 | GET / PATCH / DELETE | `/admin/gear/:id` | Delete removes its images and GearClick docs |
-| GET / POST | `/admin/taxonomies` | |
-| PATCH / DELETE | `/admin/taxonomies/:id` | Delete returns 409 `RESOURCE_IN_USE` if any gear references it |
-| POST | `/admin/uploads` | multipart field `image`, `?folder=tours\|gear\|verticals`. Returns `{ image: { url, path } }` |
-| DELETE | `/admin/uploads` | Body `{ path }`. Path must start with an allowed folder prefix |
+| GET / POST | `/admin/taxonomies` | GET takes `?type`. POST body `{ type, name, slug? }` |
+| PATCH / DELETE | `/admin/taxonomies/:id` | PATCH body `{ name?, slug? }` (type is fixed). Delete returns 409 `RESOURCE_IN_USE` if any gear references it |
+| POST | `/admin/uploads` | multipart field `image`, `?folder=tours\|gear\|verticals`. 201 `{ image: { url, path } }` |
+| DELETE | `/admin/uploads` | Body `{ path }`. Path must be one this API generated: `{folder}/{uuid}.{jpg\|png\|webp}` |
 | GET | `/admin/bookings` | `?status&vertical&tour&from&to&q(bookingNumber/name/phone/email)&page` |
 | GET | `/admin/bookings/:bookingNumber` | |
 | PATCH | `/admin/bookings/:bookingNumber/status` | Body `{ status }`. Only `confirmed→cancelled` and `confirmed→completed`; anything else is 409 `INVALID_STATUS_TRANSITION` |
@@ -316,8 +318,22 @@ Query rules:
 | GET | `/admin/users/:id` | User + their bookings |
 | GET | `/admin/newsletter` | Paginated |
 
-When a tour or gear item's images are removed or replaced in an update, the service deletes the orphaned Supabase objects.
+When a tour, gear item or vertical has images removed or replaced in an update, the service deletes the orphaned Supabase objects.
 
+### Admin content behavior
+
+- **Bodies:** create bodies take every required model field; PATCH bodies take any subset (at least one field). Both are strict. Arrays and nested objects (`tiers`, `itinerary`, `gallery`, `reporting`, `signatureActivity`, `images`, `climates`, …) are replaced whole, never merged.
+- **Never accepted from the client:** `startingPrice`, `clickCount`, timestamps, a vertical's `key` / `code` / `name` / `order`, a taxonomy's `type` on PATCH.
+- **Slugs:** generated from the title/name when `slug` is not sent on create. A PATCH never regenerates the slug; it changes only when `slug` is sent. A clash is 409 `DUPLICATE`. A name that yields no slug (e.g. `!!!`) is 400 on field `slug`.
+- **Images** are `{ url, path }`: `url` must be https; `path` is `null` (external image, never deleted) or a path generated by `POST /admin/uploads`. Anything else is 400, so a forged path can never reach `deleteImages`.
+- **Image cleanup** runs after a successful save and is best effort: a storage failure is logged and the request still succeeds. An image that only moved (gallery reorder, cover ↔ gallery) is kept. `DELETE /admin/uploads` is for uploads that were never saved on a document.
+- **Tours:** `vertical` is a vertical id and must exist (400 on field `vertical`). The rules of the model (1–5 tiers, unique tier names, sequential itinerary days, `HH:mm` reporting time, signature activity) are checked by Zod first, with the model as the backstop. Updates go through `doc.save()`, which re-syncs `startingPrice`.
+- **Tier ids:** on PATCH a tier sent with the `id` of an existing tier keeps that id; any other tier (no id, unknown id, repeated id) gets a new one. Create rejects tier ids.
+- **Gear:** `category`, `climates[]`, `tags[]` and `tours[]` are ids. Each taxonomy id must exist with the type its field expects, and each tour must exist (published or not); otherwise 400 naming the field. Repeated ids are stored once. `salePrice ≤ mrp` is checked against the stored value when a PATCH sends only one of the two.
+- **Taxonomies:** names are unique per type, ignoring case (409 `DUPLICATE`); the same name in another type is fine.
+- **Responses:** tour detail is the full document with `vertical { id, key, name, code }`. Gear detail has `category` / `climates[]` / `tags[]` as `{ id, type, name, slug }` and `tours[]` as `{ id, title, slug }`. Lists return a slimmer projection (tour list: card fields + `isPublished`, `vertical`, timestamps; gear list: `name, slug, images, mrp, salePrice, category, isActive, clickCount`, timestamps).
+- **Uploads:** an oversized file is 413 `FILE_TOO_LARGE`; a missing file or a type other than jpeg/png/webp is 400 `INVALID_FILE`; a bad `folder`, a wrong field name or a broken multipart body is 400 `VALIDATION_ERROR`. A storage failure on upload is 500 `INTERNAL_ERROR`.
+- Unknown `/admin/*` paths answer 401/403 to non-admins and 404 `ROUTE_NOT_FOUND` to admins.
 ### Public catalog behavior
 
 - **Tour card:** `id, title, slug, state, destination, tagline, durationDays, difficulty, coverImage, topActivities, startingPrice`.
@@ -410,7 +426,9 @@ Run the independent pipelines with `Promise.all`.
 **Uploads**
 - Multer memory storage, 5 MB limit, single file.
 - Verify the real type with `file-type`: jpeg, png, or webp only.
-- Store under `{folder}/{randomUUID()}.{ext}` and never use the original filename.
+- Store under `{folder}/{randomUUID()}.{ext}` (extension from the sniffed type) and never use the original filename or client MIME type.
+- Image paths in request bodies must match `IMAGE_PATH_REGEX`, so no client-chosen path is ever deleted from storage.
+- The bucket itself is public-read with a 5 MB limit and jpeg/png/webp only. The service-role key lives only in `config/supabase.js`.
 - Uploads are admin only.
 
 **Rate limits** (all return the standard `RATE_LIMITED` envelope)
@@ -458,7 +476,7 @@ No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
 - Use Vitest + Supertest against `app.js`, with mongodb-memory-server providing a fresh DB per test file and collections cleared between tests.
 - Mock **external services only**:
   - `google-auth-library` verification, via `vi.mock('google-auth-library')` with a stub `OAuth2Client.verifyIdToken` (see `tests/auth.test.js`)
-  - the Supabase storage client (`config/supabase.js`)
+  - the Supabase storage client (`config/supabase.js`), via `tests/helpers/supabaseMock.js` (`bucket` spies, `resetBucket()`, `storedImage(folder)`, `removedPaths()`); the `vi.mock` line to copy is at the top of that file
 
   Never mock Mongoose.
 - `helpers/authAgent(user, app?)` signs a JWT directly and returns a Supertest agent with the cookie set.
