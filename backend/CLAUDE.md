@@ -1,0 +1,453 @@
+# Backend — Adventuro API
+
+Read `/CLAUDE.md` first. It holds the product rules, the API envelope, the error codes, and the auth flow. This file covers how the API is built.
+
+## Stack
+
+- **Runtime:** Node.js 22.x (LTS; `engines` pins `22.x`, so use only APIs available in 22), `"type": "module"`, Express 5
+- **Data:** Mongoose (latest)
+- **Validation:** Zod for request validation and for env validation
+- **Auth:** `google-auth-library`, `jsonwebtoken`, `cookie-parser`
+- **Security:** `helmet`, `cors`, `express-rate-limit`
+- **Files:** `multer` (memory storage), `file-type` (magic-byte sniffing), `@supabase/supabase-js`
+- **Tickets:** `pdfkit`
+- **Logging:** `pino` + `pino-http`
+- **Dev tools:** Vitest, Supertest, mongodb-memory-server, ESLint (flat config), Prettier
+
+Install everything at its latest stable version. **Do not use:**
+
+| Package | Use instead |
+|---|---|
+| `nodemon` | `node --watch` |
+| `dotenv` | `--env-file` |
+| `body-parser` | `express.json()` |
+| `uuid` | `crypto.randomUUID()` |
+| `moment` | `Intl` / native `Date` |
+| `express-mongo-sanitize` | Mongoose `sanitizeFilter` + strict Zod (the package breaks on Express 5's read-only `req.query`) |
+| `bcrypt` | Not needed — there are no passwords |
+
+## Scripts
+
+```
+dev            node --watch --env-file=.env src/server.js
+start          node src/server.js
+test           vitest run
+test:watch     vitest
+test:coverage  vitest run --coverage
+lint           eslint .
+format         prettier --write .
+seed           node --env-file=.env scripts/seed.js
+```
+
+## Environment (`src/config/env.js`, validated with Zod at startup — fail fast)
+
+| Var | Notes |
+|---|---|
+| `NODE_ENV` | `development` \| `test` \| `production` |
+| `PORT` | default 5000 |
+| `MONGODB_URI` | |
+| `JWT_SECRET` | ≥ 32 chars |
+| `JWT_EXPIRES_IN` | default `7d` |
+| `GOOGLE_CLIENT_ID` | |
+| `ADMIN_EMAILS` | comma-separated, lowercased on parse |
+| `CORS_ORIGINS` | comma-separated allowlist |
+| `SUPABASE_URL` | |
+| `SUPABASE_SERVICE_ROLE_KEY` | backend only, never logged |
+| `SUPABASE_BUCKET` | public bucket for images |
+| `LOG_LEVEL` | default `info` |
+
+Export a frozen, typed object. Nothing else reads `process.env`.
+
+## Folder structure
+
+```
+backend/
+├── src/
+│   ├── server.js              # connect DB, listen, graceful shutdown (SIGINT/SIGTERM)
+│   ├── app.js                 # builds and exports the Express app (no listen) — tests import this
+│   ├── config/
+│   │   ├── env.js
+│   │   ├── db.js              # mongoose.connect, sets sanitizeFilter + strictQuery
+│   │   ├── supabase.js        # storage client
+│   │   ├── logger.js          # pino instance with redaction
+│   │   └── constants.js       # VERTICALS, ROLES, BOOKING_STATUS, THEME, limits
+│   ├── routes/
+│   │   ├── index.js           # mounts every router under /api/v1
+│   │   ├── auth.routes.js
+│   │   ├── user.routes.js
+│   │   ├── vertical.routes.js
+│   │   ├── tour.routes.js
+│   │   ├── gear.routes.js
+│   │   ├── taxonomy.routes.js
+│   │   ├── booking.routes.js
+│   │   ├── search.routes.js
+│   │   ├── newsletter.routes.js
+│   │   └── admin/
+│   │       ├── index.js       # applies requireAuth + requireAdmin ONCE, mounts admin routers
+│   │       ├── dashboard.routes.js
+│   │       ├── vertical.routes.js
+│   │       ├── tour.routes.js
+│   │       ├── gear.routes.js
+│   │       ├── taxonomy.routes.js
+│   │       ├── upload.routes.js
+│   │       ├── booking.routes.js
+│   │       ├── user.routes.js
+│   │       └── newsletter.routes.js
+│   ├── controllers/           # mirrors routes/ (including admin/)
+│   ├── services/              # business logic + DB access, mirrors domains
+│   ├── models/                # User, Vertical, Tour, Gear, Taxonomy, Booking, Counter, GearClick, NewsletterSubscriber
+│   │                          # + schemaHelpers.js (toJSONOptions, imageSchema, integerValidator, isHttpsUrl)
+│   ├── validators/            # Zod schemas per domain (+ common.js: objectId, slug, pagination, phone)
+│   ├── middlewares/
+│   │   ├── auth.js            # requireAuth, requireAdmin, requireCompleteProfile
+│   │   ├── validate.js
+│   │   ├── rateLimiters.js
+│   │   ├── upload.js
+│   │   ├── notFound.js
+│   │   └── errorHandler.js
+│   └── utils/
+│       ├── AppError.js
+│       ├── response.js        # sendSuccess
+│       ├── cookies.js         # auth cookie options, set/clear helpers
+│       ├── escapeRegex.js
+│       ├── pagination.js
+│       ├── dates.js           # IST "tomorrow", date-only helpers
+│       └── slugify.js
+├── scripts/seed.js            # idempotent: 6 verticals + starter taxonomies
+├── tests/
+│   ├── setup.js               # mongodb-memory-server lifecycle, clears collections between tests
+│   ├── helpers/               # factories (user, tour, gear, booking), authAgent(user)
+│   └── *.test.js              # one file per route group
+├── .env.example
+├── eslint.config.js
+└── vitest.config.js
+```
+
+Conventions:
+- Files are named `<domain>.<layer>.js`; models are PascalCase files (`Tour.js`).
+- **Named exports only.** No default exports.
+- Functions are camelCase, constants UPPER_SNAKE.
+- Each module does one job. If a file passes about 200 lines, split it by responsibility.
+
+## Layer responsibilities
+
+| Layer | Does | Never |
+|---|---|---|
+| routes | path + middleware chain + controller | logic, DB calls |
+| controllers | read `req.validated` / `req.user`, call services, `sendSuccess` | business rules, queries, building error responses |
+| services | business rules, queries, throw `AppError` | touch `req` / `res` |
+| models | schema, indexes, field validation, `toJSON` transform | business workflows |
+| validators | Zod schemas for body / query / params | DB access |
+
+### Controller pattern (mandatory)
+
+Every controller is `async` with `try/catch`. The `catch` block calls `next(err)` and does **nothing else**.
+
+```js
+export const getTourBySlug = async (req, res, next) => {
+  try {
+    const tour = await tourService.getPublishedBySlug(req.validated.params.slug);
+    return sendSuccess(res, { message: 'Tour fetched', data: { tour } });
+  } catch (err) {
+    next(err);
+  }
+};
+```
+
+### Response helper
+
+```js
+export const sendSuccess = (res, { status = 200, message, data, meta }) =>
+  res.status(status).json({ success: true, message, ...(data && { data }), ...(meta && { meta }) });
+```
+
+Status codes:
+- `200` for reads, updates, and deletes.
+- `201` for creates.
+- `302` only for the gear affiliate redirect.
+- Errors per the table in `/CLAUDE.md`.
+- **Never 204**, because every JSON response must include `success` and `message`.
+
+## Centralized error handling
+
+- `AppError(statusCode, code, message, errors?)`: services throw it. Controllers never write error responses themselves.
+- Order in `app.js`: routes → `notFound` (throws `ROUTE_NOT_FOUND`) → `errorHandler`. **`errorHandler` is the last `app.use`.**
+- `errorHandler` normalizes errors:
+
+  | Incoming error | Response |
+  |---|---|
+  | `AppError` | as thrown |
+  | `ZodError` | 400 `VALIDATION_ERROR`, `errors: [{ field, message }]` |
+  | Mongoose `ValidationError` / `CastError` | 400 `VALIDATION_ERROR` |
+  | Mongo duplicate key `11000` | 409 — `PHONE_TAKEN` if the key is `phone`, otherwise `DUPLICATE` |
+  | JWT errors (`JsonWebTokenError`, `TokenExpiredError`) | 401 `UNAUTHENTICATED`, and clear the cookie |
+  | Multer `LIMIT_FILE_SIZE` | 413 `FILE_TOO_LARGE` |
+  | Body parse failure (`entity.parse.failed`) or JSON body over the 100kb limit (`entity.too.large`) | 400 `VALIDATION_ERROR` |
+  | Anything else | 500 `INTERNAL_ERROR` with a generic message, logged with its stack |
+
+- In production, never leak stacks, queries, or internal messages. Include `stack` only when `NODE_ENV=development`.
+- In `server.js`, `unhandledRejection` and `uncaughtException` handlers log the error and shut down gracefully.
+
+## Validation
+
+- The `validate({ body, query, params })` middleware parses with Zod and writes the result to `req.validated = { body, query, params }`.
+- Controllers read **only** from `req.validated`. Express 5's `req.query` is read-only, and raw input is never trusted.
+- Body schemas use `.strict()`, so unknown keys are rejected. This is the mass-assignment protection. Never spread `req.body` into a model, and never accept `role`, `status`, `bookingNumber`, `totalAmount`, `clickCount`, or `profileComplete` from clients.
+- Use the shared `objectId`, `slug`, `phone` (`/^[6-9]\d{9}$/`), `pagination`, `dateOnly` (`YYYY-MM-DD`), and `httpsUrl` schemas from `validators/common.js`.
+- `validate` checks all three sources before responding, so one 400 lists every failing field. An unknown key is reported as `{ field: '<key>', message: 'Unknown field' }`.
+- Coerce query numbers with `z.coerce.number().int()` and bound them. Trim strings and give them max lengths. Search `q` must be 2–64 chars.
+
+## Data models
+
+All models have timestamps. Every `toJSON` transform maps `_id` → `id` and strips `__v` and internal fields. Images use an `Image` subdocument: `{ url, path }`, where `path` is the Supabase object path used for deletion.
+
+**User**
+- `googleId` (unique, hidden from JSON), `email` (unique, lowercase), `name`, `avatarUrl`
+- `phone` (unique, sparse)
+- `role` (`user` | `admin`)
+- `themePreference` (`system` | `light` | `dark`, default `system`)
+- `lastLoginAt`
+- Virtual `profileComplete = Boolean(name && phone)`
+
+**Vertical**
+- `key` (enum of the 6 keys, unique), `code` (TT/GS/PP/ES/UE/GI), `name`, `subtitle`, `description`
+- `heroImage`, `order`
+- Seeded only.
+
+**Tour**
+- `vertical` (ref), `title`, `slug` (unique)
+- `state`, `destination`, `tagline`, `overview`
+- `durationDays`, `difficulty` (`easy` | `moderate` | `challenging`)
+- `coverImage`, `gallery[]`
+- `topActivities[]`, `signatureActivity { title, description }` (required)
+- `itinerary[{ day, title, description }]` (days sequential from 1)
+- `inclusions[]`, `exclusions[]`
+- `tiers[{ _id, name, description, pricePerPerson }]` (1–5 tiers, unique names)
+- `reporting { location, address, time 'HH:mm' }`
+- `startingPrice` (min tier price, kept in sync in a `pre('save')` / update hook). The `findOneAndUpdate` hook forces `runValidators` and only re-syncs when the update replaces the whole `tiers` array (top-level or `$set`), so services must write tiers that way or via `doc.save()`.
+- `isPublished`
+- Indexes: `{ vertical, isPublished }`, `{ state }`
+
+**Taxonomy**
+- `type` (`category` | `climate` | `tag`), `name`, `slug`
+- Unique index `{ type, slug }`
+
+**Gear**
+- `name`, `slug` (unique), `shortDescription`, `description`, `images[]`
+- `mrp`, `salePrice` (≤ mrp)
+- `affiliateUrl` (https only)
+- `category` (ref Taxonomy, type category), `climates[]`, `tags[]` (refs)
+- `tours[]` (ref Tour)
+- `isActive`, `clickCount`
+- Indexes: `{ isActive, category }`, `{ tours }`
+
+**Booking**
+- `bookingNumber` (unique), `user`, `tour`, `vertical` (refs)
+- `snapshot { tourTitle, verticalName, verticalCode, tierName, pricePerPerson, durationDays }`
+- `travelers` (1–20), `startDate` (Date at 00:00 UTC representing the calendar date), `totalAmount`
+- `contact { name, phone, email }` (snapshot)
+- `status` (`confirmed` | `cancelled` | `completed`), `statusUpdatedAt`
+- Indexes: `{ user, createdAt: -1 }`, `{ status }`, `{ vertical }`
+
+**Counter**
+- `_id` (e.g. `booking-TT-2026`), `seq`
+- Incremented atomically with `findOneAndUpdate({ $inc }, { upsert: true, returnDocument: 'after' })` through `nextSequence(key)` in `services/counter.service.js`. Gaps in the sequence are acceptable.
+
+**GearClick**
+- `gear` (ref), `user` (ref, optional), `createdAt`
+- No IP or user-agent stored.
+
+**NewsletterSubscriber**
+- `email` (unique, lowercase)
+
+Query rules:
+- Use `.lean()` for reads and select only the fields you need.
+- Run independent queries with `Promise.all`.
+- Never return unbounded lists; paginate, max 50.
+
+## Endpoints (`/api/v1`)
+
+### Public / customer
+
+| Method | Path | Middleware | Notes |
+|---|---|---|---|
+| GET | `/health` | — | `{ success, message: 'OK', data: { uptime } }` (uptime in seconds). Used as the Render health check |
+| POST | `/auth/google` | authLimiter | Body `{ credential }`. Upserts the user, syncs the role, sets the cookie |
+| GET | `/auth/me` | requireAuth | `{ user }` |
+| POST | `/auth/logout` | — | Clears the cookie; succeeds even with no session |
+| PATCH | `/users/me` | requireAuth | Body `{ name?, phone?, themePreference? }` |
+| GET | `/verticals` | — | All 6, ordered |
+| GET | `/verticals/:key` | — | Vertical + its published tours (cards) |
+| GET | `/tours` | — | `?vertical&state&difficulty&q&page&limit`, published only |
+| GET | `/tours/:slug` | — | Full detail, published only |
+| GET | `/gear` | — | `?q&category&climate&tag&tour&vertical&sort(newest\|price_asc\|price_desc\|popular)&page&limit`, active only |
+| GET | `/gear/:id/go` | goLimiter, optionalAuth | Logs a GearClick, `$inc clickCount`, then 302 to `affiliateUrl` |
+| GET | `/taxonomies` | — | `?type` |
+| GET | `/search` | searchLimiter | `?q`. Returns `{ tours: [≤5], gear: [≤5] }` |
+| POST | `/bookings` | requireAuth, requireCompleteProfile, bookingLimiter | Body `{ tourId, tierId, travelers, startDate 'YYYY-MM-DD' }` |
+| GET | `/bookings/me` | requireAuth | Paginated, newest first |
+| GET | `/bookings/:bookingNumber` | requireAuth | Owner (or admin) only. Others get 404 |
+| GET | `/bookings/:bookingNumber/ticket` | requireAuth | PDF (`Content-Disposition: attachment`). Owner (or admin) only |
+| POST | `/newsletter` | newsletterLimiter | Body `{ email }`. Idempotent: returns the same success whether new or existing (no enumeration) |
+
+### Admin (`/admin/*`, requireAuth + requireAdmin applied once in `routes/admin/index.js`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/dashboard` | `?from&to` (default last 30 days). See Dashboard below |
+| GET / PATCH | `/admin/verticals`, `/admin/verticals/:id` | Content fields only. No create or delete |
+| GET / POST | `/admin/tours` | List includes unpublished. Filters `?vertical&q&isPublished` |
+| GET / PATCH / DELETE | `/admin/tours/:id` | Delete returns 409 `RESOURCE_IN_USE` if bookings exist (unpublish instead). Delete removes the tour's images and pulls it from `gear.tours` |
+| GET / POST | `/admin/gear` | Includes inactive |
+| GET / PATCH / DELETE | `/admin/gear/:id` | Delete removes its images and GearClick docs |
+| GET / POST | `/admin/taxonomies` | |
+| PATCH / DELETE | `/admin/taxonomies/:id` | Delete returns 409 `RESOURCE_IN_USE` if any gear references it |
+| POST | `/admin/uploads` | multipart field `image`, `?folder=tours\|gear\|verticals`. Returns `{ image: { url, path } }` |
+| DELETE | `/admin/uploads` | Body `{ path }`. Path must start with an allowed folder prefix |
+| GET | `/admin/bookings` | `?status&vertical&tour&from&to&q(bookingNumber/name/phone/email)&page` |
+| GET | `/admin/bookings/:bookingNumber` | |
+| PATCH | `/admin/bookings/:bookingNumber/status` | Body `{ status }`. Only `confirmed→cancelled` and `confirmed→completed`; anything else is 409 `INVALID_STATUS_TRANSITION` |
+| GET | `/admin/users` | `?q&role&page` |
+| GET | `/admin/users/:id` | User + their bookings |
+| GET | `/admin/newsletter` | Paginated |
+
+When a tour or gear item's images are removed or replaced in an update, the service deletes the orphaned Supabase objects.
+
+## Key business logic
+
+**Sign-in (`auth.service`)**
+1. Verify the token with `OAuth2Client.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID })` and require `email_verified`.
+2. Upsert by `googleId`. On first sign-in, set name and avatar from Google.
+3. Set `role` from `ADMIN_EMAILS` on **every** sign-in.
+4. Update `lastLoginAt`.
+
+**Booking create (`booking.service`)**
+1. Load the tour, which must be published, along with its vertical.
+2. Find the tier by id. If either the tour or tier is missing or unavailable, return `TOUR_UNAVAILABLE`.
+3. Validate that `startDate` is between tomorrow and 365 days ahead, both in Asia/Kolkata.
+4. Compute `totalAmount = pricePerPerson × travelers`.
+5. Get the next counter value for `booking-{code}-{year}` and format the booking number as `ADV-{code}-{year}-{seq padded to 6}`.
+6. Create the booking with the tour/tier snapshot and the contact snapshot from the user.
+
+**Ticket (`ticket.service`, pdfkit)**
+- Contents: booking number, status, tour, vertical, tier, travelers, start date, reporting time and location (read live from the tour), total, contact.
+- Do the ownership check **before** streaming starts, so errors are still JSON.
+
+**Dashboard**
+
+Aggregations bucketed by day in `Asia/Kolkata` (`$dateToString` with `timezone`):
+- totals: users, bookings, booking value (confirmed + completed), newsletter subscribers
+- new users per day; bookings per day
+- bookings by status; bookings and value per vertical
+- top 5 tours by bookings; top 5 gear by clicks in range
+- 10 most recent bookings
+
+Run the independent pipelines with `Promise.all`.
+
+**Search**
+- Escape user input with `escapeRegex`, then use a case-insensitive regex on tour `title`/`state`/`destination` and gear `name`.
+- Published or active items only, limit 5 each.
+
+## Security checklist (all mandatory)
+
+**HTTP layer**
+- `helmet()`.
+- `app.set('trust proxy', 1)` (Render).
+- `express.json({ limit: '100kb' })`.
+- `cors({ origin: CORS_ORIGINS allowlist, credentials: true })`.
+
+**Database**
+- Set `mongoose.set('sanitizeFilter', true)` and `mongoose.set('strictQuery', true)`.
+- Combined with strict Zod schemas, this blocks NoSQL operator injection.
+
+**Session**
+- The JWT is HS256 with `algorithms: ['HS256']` passed explicitly to `verify`, payload `{ sub }`, expiring per `JWT_EXPIRES_IN`.
+- The cookie is `adv_session`: `httpOnly`, `secure` in production, `sameSite: 'lax'`, `path: '/'`, `maxAge` matching the JWT.
+- `requireAuth` **loads the user from the DB on every request**, so role changes and deletions take effect immediately.
+- `sameSite: 'lax'` on a first-party cookie (via the Vercel rewrites) is the CSRF defense. Never move the token to `localStorage` or response bodies.
+
+**Authorization and trust**
+- Customer booking lookups query `{ bookingNumber, user: req.user.id }` and return 404 (not 403) for other users' bookings, to prevent enumeration.
+- Admin routes are guarded at the router level, never per handler.
+- Never trust the client for price, total, role, status, booking number, or click counts.
+
+**Inputs and redirects**
+- `escapeRegex` all user search input and cap its length.
+- The affiliate URL must be https (validated with `z.url()` plus a protocol check). The redirect target always comes from the DB by id, never from a query parameter, so there is no open redirect.
+
+**Uploads**
+- Multer memory storage, 5 MB limit, single file.
+- Verify the real type with `file-type`: jpeg, png, or webp only.
+- Store under `{folder}/{randomUUID()}.{ext}` and never use the original filename.
+- Uploads are admin only.
+
+**Rate limits** (all return the standard `RATE_LIMITED` envelope)
+
+| Limiter | Limit |
+|---|---|
+| global | 300 / 15 min / IP |
+| auth | 20 / 15 min |
+| booking | 10 / hour / user |
+| newsletter | 5 / hour |
+| search | 60 / min |
+| go | 60 / min |
+
+**Logging**
+- Use pino with redaction of `req.headers.cookie`, `authorization`, `credential`, and `*.phone`.
+- Never log tokens, keys, or full user objects.
+
+**Dependencies**
+- `npm audit` must report **0 vulnerabilities**.
+- Fix by upgrading. Never use `npm audit fix --force` blindly, and if something can't be fixed cleanly, stop and report it.
+
+## Modern code standards
+
+- ES2023+ throughout: `import` / `export`, `async` / `await` (no `.then` chains), `const` by default, destructuring, optional chaining, nullish coalescing, template literals, arrow functions for non-method functions, spread over `Object.assign`.
+- Use `structuredClone` and `crypto.randomUUID`, and `Number.parseInt(x, 10)`.
+- Top-level `await` only in `server.js` and `scripts/`.
+- Use the `logger` (pino) instead of `console`.
+- Constants come from `config/constants.js`. No magic strings or numbers for statuses, roles, verticals, or limits.
+- ESLint flat config: `no-unused-vars` and `no-console` are errors, plus `prefer-const`, `eqeqeq`, `no-var`, `object-shorthand`. Prettier handles formatting.
+
+## Seed (`npm run seed`)
+
+Idempotent upserts:
+- The 6 verticals (key, code, name, subtitle, description from the founder vision).
+- Starter taxonomies:
+  - categories: Backpacks, Shoes, Camping, Water Gear, Winter Gear, Accessories, Travel Kits, Caps
+  - climates: Tropical/Beach, Desert/Dust, High Altitude/Snow, Luxury/Resort, Urban/Transit
+
+Re-running is safe on a live DB: vertical `code`/`name`/`order` are re-synced, but `subtitle`, `description`, and taxonomy names are written only on first insert, so admin edits are never overwritten. `scripts/seed.js` exports `runSeed()` for tests and other scripts.
+
+No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
+
+## Testing
+
+- Use Vitest + Supertest against `app.js`, with mongodb-memory-server providing a fresh DB per test file and collections cleared between tests.
+- Mock **external services only**:
+  - `google-auth-library` verification, via `vi.mock` on the auth service's verifier
+  - the Supabase storage client (`config/supabase.js`)
+
+  Never mock Mongoose.
+- `helpers/authAgent(user)` signs a JWT directly and returns a Supertest agent with the cookie set.
+- Every route group must test:
+  - happy path, with exact status and envelope shape
+  - validation failure (400 + `VALIDATION_ERROR`)
+  - unauthenticated (401) and non-admin on admin routes (403)
+  - not found (404)
+  - ownership / IDOR (another user's booking → 404)
+  - booking price computed server-side (a client-sent total is rejected)
+  - booking number format and per-vertical sequence
+  - status transitions, delete-blocked conflicts (409)
+  - upload type and size rejection
+  - the error-handler mapping (duplicate key, CastError, malformed JSON)
+- Coverage threshold: **80% lines and branches** on `src/`, excluding `server.js` and `config/db.js`.
+
+## Definition of done
+
+1. `npm run lint` is clean, with no warnings left behind.
+2. `npm test` passes and coverage meets the threshold.
+3. `npm audit` reports 0 vulnerabilities.
+4. There is no dead code, no unused dependencies in `package.json`, and no `console.*`.
+5. Every new endpoint follows routes → validator → controller (try/catch → `next(err)`) → service, and responds with `{ success, message, … }`.
+6. `.env.example` and this file are updated if env vars or endpoints changed.

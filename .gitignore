@@ -3,4 +3,5 @@ node_modules/
 .env.*
 !.env.example
 e2e/.auth*.json
-*.md
+BUILD_PROMPTS.md
+PROGRESS.md
