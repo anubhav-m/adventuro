@@ -1,5 +1,8 @@
+import express from 'express';
+import { pinoHttp } from 'pino-http';
+import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { createLogger } from '../src/config/logger.js';
+import { createLogger, serializeRequest } from '../src/config/logger.js';
 
 const capture = () => {
   const lines = [];
@@ -49,5 +52,20 @@ describe('logger redaction', () => {
     expect(raw()).toBe('');
     logger.info('shown');
     expect(raw()).toContain('shown');
+  });
+});
+
+describe('request logs', () => {
+  it('log the path without the query string, so search terms never reach the logs', async () => {
+    const { logger, last, raw } = capture();
+    const probe = express();
+    probe.use(pinoHttp({ logger, serializers: { req: serializeRequest } }));
+    probe.get('/api/v1/admin/users', (_req, res) => res.json({ success: true, message: 'OK' }));
+
+    await request(probe).get('/api/v1/admin/users?q=9811122233&role=user');
+
+    expect(last().req).toMatchObject({ method: 'GET', url: '/api/v1/admin/users' });
+    expect(last().req).not.toHaveProperty('query');
+    expect(raw()).not.toContain('9811122233');
   });
 });

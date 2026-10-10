@@ -1,6 +1,7 @@
 import { LIMITS, TIMEZONE } from '../config/constants.js';
 
 const DAY_MS = 86_400_000;
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const istDateFormat = new Intl.DateTimeFormat('en-CA', {
@@ -31,3 +32,19 @@ export const getMaxStartDate = (now = new Date()) =>
 
 export const isBookableStartDate = (date, now = new Date()) =>
   date >= getIstTomorrow(now) && date <= getMaxStartDate(now);
+
+export const countDaysInclusive = (from, to) => Math.round((to - from) / DAY_MS) + 1;
+
+export const listDateOnlyRange = (from, to) =>
+  Array.from({ length: countDaysInclusive(from, to) }, (_, index) =>
+    formatDateOnly(addDays(from, index)),
+  );
+
+// The instant an IST calendar day begins. India has no DST, so the offset is fixed.
+const istStartOfDay = (date) => new Date(date.getTime() - IST_OFFSET_MS);
+
+// A range of instants covering whole IST calendar days. Either bound may be omitted.
+export const istDayRange = ({ from, to }) => ({
+  ...(from && { $gte: istStartOfDay(from) }),
+  ...(to && { $lt: istStartOfDay(addDays(to, 1)) }),
+});

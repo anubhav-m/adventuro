@@ -25,7 +25,7 @@ const fetchGooglePayload = async (credential) => {
   }
 };
 
-export const verifyGoogleCredential = async (credential) => {
+const verifyGoogleCredential = async (credential) => {
   const payload = await fetchGooglePayload(credential);
   if (!payload?.sub || !payload.email || payload.email_verified !== true) {
     throw invalidGoogleToken();

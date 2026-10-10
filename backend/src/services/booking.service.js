@@ -16,11 +16,11 @@ const BOOKING_FIELDS =
   'bookingNumber tour vertical snapshot travelers startDate totalAmount contact status statusUpdatedAt createdAt';
 const TOUR_FIELDS = 'slug reporting';
 const VERTICAL_FIELDS = 'key name code';
-const NEWEST_FIRST = { createdAt: -1, _id: -1 };
+export const NEWEST_FIRST = { createdAt: -1, _id: -1 };
 
 // `tour` and `vertical` are populated lean documents. Reporting details are read from the
 // tour on every request, so admin edits reach existing bookings and tickets.
-const toBookingResponse = ({ tour, startDate, ...booking }) =>
+export const toBookingResponse = ({ tour, startDate, ...booking }) =>
   serialize({
     ...booking,
     startDate: formatDateOnly(startDate),
@@ -28,7 +28,7 @@ const toBookingResponse = ({ tour, startDate, ...booking }) =>
     reporting: tour?.reporting ?? null,
   });
 
-const findBookings = (filter) =>
+export const findBookings = (filter) =>
   Booking.find(filter)
     .select(BOOKING_FIELDS)
     .populate('tour', TOUR_FIELDS)

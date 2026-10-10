@@ -11,7 +11,16 @@ vi.mock(
 
 const ID = '64b7f0c2a1b2c3d4e5f60718';
 
+const BOOKING_NUMBER = 'ADV-TT-2026-000001';
+
 const ADMIN_ROUTES = [
+  ['get', '/dashboard'],
+  ['get', '/bookings'],
+  ['get', `/bookings/${BOOKING_NUMBER}`],
+  ['patch', `/bookings/${BOOKING_NUMBER}/status`],
+  ['get', '/users'],
+  ['get', `/users/${ID}`],
+  ['get', '/newsletter'],
   ['post', '/uploads?folder=tours'],
   ['delete', '/uploads'],
   ['get', '/verticals'],

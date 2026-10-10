@@ -37,7 +37,11 @@ test:coverage  vitest run --coverage
 lint           eslint .
 format         prettier --write .
 seed           node --env-file=.env scripts/seed.js
+seed:demo      node --env-file=.env scripts/seed-demo.js     # demo tours and gear, never in production
+e2e:server     node --env-file=.env scripts/e2e-server.js    # E2E harness for the frontends, see Testing
 ```
+
+`npx knip` (configured by `knip.json`, not installed as a dependency) reports unused files, exports and dependencies.
 
 ## Environment (`src/config/env.js`, validated with Zod at startup — fail fast)
 
@@ -114,17 +118,22 @@ backend/
 │       ├── cookies.js         # auth cookie options, set/clear helpers
 │       ├── escapeRegex.js     # escapeRegex + containsRegex / exactRegex (literal, case-insensitive)
 │       ├── pagination.js
-│       ├── dates.js           # IST "tomorrow", date-only helpers
+│       ├── dates.js           # IST "tomorrow", date-only helpers, IST day ranges for queries
 │       ├── format.js          # display strings: rupees, calendar date, clock time, IST date-time
 │       ├── serialize.js       # `_id` → `id`, drops `__v` for `.lean()` results
 │       └── slugify.js
-├── scripts/seed.js            # idempotent: 6 verticals + starter taxonomies
+├── scripts/
+│   ├── seed.js                # idempotent: 6 verticals + starter taxonomies
+│   ├── seed-demo.js           # idempotent by slug: demo tours, gear, tags, vertical hero images
+│   ├── demo/                  # the demo content itself: tours.<vertical>.js, gear.js, helpers.js
+│   └── e2e-server.js          # E2E harness (dev only, never imported by src)
 ├── tests/
 │   ├── setup.js               # mongodb-memory-server lifecycle, clears collections between tests
 │   ├── helpers/               # factories (user, tour, gear, booking), authAgent(user), supabaseMock
 │   └── *.test.js              # one file per route group
 ├── .env.example
 ├── eslint.config.js
+├── knip.json
 └── vitest.config.js
 ```
 
@@ -301,7 +310,7 @@ Query rules:
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/admin/dashboard` | `?from&to` (default last 30 days). See Dashboard below |
+| GET | `/admin/dashboard` | `?from&to` (`YYYY-MM-DD`, default last 30 days, at most 366 days). See Dashboard below |
 | GET / PATCH | `/admin/verticals`, `/admin/verticals/:id` | PATCH body `{ subtitle?, description?, heroImage? }` only. No create or delete |
 | GET / POST | `/admin/tours` | List includes unpublished. Filters `?vertical(key)&q&isPublished(true\|false)&page&limit` |
 | GET / PATCH / DELETE | `/admin/tours/:id` | Delete returns 409 `RESOURCE_IN_USE` if bookings exist (unpublish instead). Delete removes the tour's images and pulls it from `gear.tours` |
@@ -311,12 +320,12 @@ Query rules:
 | PATCH / DELETE | `/admin/taxonomies/:id` | PATCH body `{ name?, slug? }` (type is fixed). Delete returns 409 `RESOURCE_IN_USE` if any gear references it |
 | POST | `/admin/uploads` | multipart field `image`, `?folder=tours\|gear\|verticals`. 201 `{ image: { url, path } }` |
 | DELETE | `/admin/uploads` | Body `{ path }`. Path must be one this API generated: `{folder}/{uuid}.{jpg\|png\|webp}` |
-| GET | `/admin/bookings` | `?status&vertical&tour&from&to&q(bookingNumber/name/phone/email)&page` |
-| GET | `/admin/bookings/:bookingNumber` | |
-| PATCH | `/admin/bookings/:bookingNumber/status` | Body `{ status }`. Only `confirmed→cancelled` and `confirmed→completed`; anything else is 409 `INVALID_STATUS_TRANSITION` |
-| GET | `/admin/users` | `?q&role&page` |
-| GET | `/admin/users/:id` | User + their bookings |
-| GET | `/admin/newsletter` | Paginated |
+| GET | `/admin/bookings` | `?status&vertical(key)&tour(id)&from&to&q(bookingNumber/name/phone/email)&page&limit`. `{ bookings }` + `meta`, newest first |
+| GET | `/admin/bookings/:bookingNumber` | `{ booking }`, any user's |
+| PATCH | `/admin/bookings/:bookingNumber/status` | Body `{ status }`. Only `confirmed→cancelled` and `confirmed→completed`; anything else is 409 `INVALID_STATUS_TRANSITION`. Sets `statusUpdatedAt`. Returns `{ booking }` |
+| GET | `/admin/users` | `?q(name/email/phone)&role&page&limit`. `{ users }` + `meta`, newest first |
+| GET | `/admin/users/:id` | `{ user, bookings }`: the user and their 50 most recent bookings |
+| GET | `/admin/newsletter` | `?page&limit`. `{ subscribers: [{ id, email, createdAt }] }` + `meta`, newest first |
 
 When a tour, gear item or vertical has images removed or replaced in an update, the service deletes the orphaned Supabase objects.
 
@@ -334,6 +343,16 @@ When a tour, gear item or vertical has images removed or replaced in an update, 
 - **Responses:** tour detail is the full document with `vertical { id, key, name, code }`. Gear detail has `category` / `climates[]` / `tags[]` as `{ id, type, name, slug }` and `tours[]` as `{ id, title, slug }`. Lists return a slimmer projection (tour list: card fields + `isPublished`, `vertical`, timestamps; gear list: `name, slug, images, mrp, salePrice, category, isActive, clickCount`, timestamps).
 - **Uploads:** an oversized file is 413 `FILE_TOO_LARGE`; a missing file or a type other than jpeg/png/webp is 400 `INVALID_FILE`; a bad `folder`, a wrong field name or a broken multipart body is 400 `VALIDATION_ERROR`. A storage failure on upload is 500 `INTERNAL_ERROR`.
 - Unknown `/admin/*` paths answer 401/403 to non-admins and 404 `ROUTE_NOT_FOUND` to admins.
+
+### Admin ops behavior
+
+- **Admin booking object:** the booking object from "Booking behavior" plus `user` (the id of the user who booked). Used by the bookings list, booking detail, the status update and the dashboard's `recentBookings`. The bookings inside `GET /admin/users/:id` are the plain booking object.
+- **Bookings list filters:** `vertical` is a vertical key (an unknown key gives an empty page), `tour` is a tour id, `status` is one of the three statuses. `from` / `to` are `YYYY-MM-DD` IST calendar days on which the booking was **made** (`createdAt`), both inclusive; either can be sent alone, and `from` after `to` is 400.
+- **Search:** `q` (2–64 chars) is an escaped, case-insensitive substring match — bookings on `bookingNumber`, `contact.name`, `contact.phone`, `contact.email`; users on `name`, `email`, `phone`.
+- **Status update:** the body accepts any of the three statuses; the transition table (`BOOKING_STATUS_TRANSITIONS`) decides. A change to the same status is also 409. The write is conditional on the status that was read, so two concurrent updates cannot both succeed.
+- **Admin user object:** `id, email, name, avatarUrl, phone, role, themePreference, lastLoginAt, createdAt, profileComplete`. `phone` is absent until the user sets one. `googleId` is never returned.
+- Roles are read-only here; they come from `ADMIN_EMAILS` at sign-in.
+
 ### Public catalog behavior
 
 - **Tour card:** `id, title, slug, state, destination, tagline, durationDays, difficulty, coverImage, topActivities, startingPrice`.
@@ -382,14 +401,25 @@ Any verification failure (bad token, wrong audience, unverified email, Google un
 
 **Dashboard**
 
-Aggregations bucketed by day in `Asia/Kolkata` (`$dateToString` with `timezone`):
-- totals: users, bookings, booking value (confirmed + completed), newsletter subscribers
-- new users per day; bookings per day
-- bookings by status; bookings and value per vertical
-- top 5 tours by bookings; top 5 gear by clicks in range
-- 10 most recent bookings
+`GET /admin/dashboard?from&to`. Both are `YYYY-MM-DD` IST calendar days, inclusive. A missing `to` is today (IST); a missing `from` is 29 days before `to`, so the default is the last 30 days. `from` after `to`, or a range longer than 366 days, is 400 `VALIDATION_ERROR`.
 
-Run the independent pipelines with `Promise.all`.
+Everything is scoped to the range by `createdAt`, except the two all-time totals. "Value" always means `totalAmount` summed over **confirmed and completed** bookings; cancelled bookings count as bookings but add no value.
+
+`data`:
+
+| Key | Shape |
+|---|---|
+| `range` | `{ from, to, days }` — the resolved range |
+| `totals` | `{ users, newUsers, bookings, bookingValue, newsletterSubscribers }`. `users` and `newsletterSubscribers` are all-time; the rest are for the range |
+| `newUsersPerDay` | `[{ date, count }]`, one entry per day of the range, zero-filled |
+| `bookingsPerDay` | `[{ date, bookings, value }]`, one entry per day, zero-filled |
+| `bookingsByStatus` | `{ confirmed, cancelled, completed }` |
+| `bookingsByVertical` | `[{ vertical: { id, key, name, code }, bookings, value }]`, every vertical in `order`, zero-filled |
+| `topTours` | Up to 5 `{ tourId, title, bookings, value }`, by bookings, then value. `title` is the snapshot from the tour's latest booking in the range |
+| `topGear` | Up to 5 `{ gearId, name, slug, clicks }`, by affiliate clicks in the range |
+| `recentBookings` | Up to 10 admin booking objects from the range, newest first |
+
+Days are bucketed in `Asia/Kolkata` (`$dateToString` with `timezone`), so a booking made at 23:30 IST belongs to that IST day. The independent pipelines and counts run in one `Promise.all` (`services/admin/dashboard.service.js`).
 
 **Search**
 - Escape user input with `escapeRegex`, then use a case-insensitive regex on tour `title`/`state`/`destination` and gear `name`.
@@ -444,6 +474,7 @@ Run the independent pipelines with `Promise.all`.
 
 **Logging**
 - Use pino with redaction of `req.headers.cookie`, `authorization`, `credential`, and `*.phone`.
+- Request logs carry the path only, never the query string (`serializeRequest` in `config/logger.js`): an admin search term can be a customer's phone number or email.
 - Never log tokens, keys, or full user objects.
 
 **Dependencies**
@@ -471,6 +502,17 @@ Re-running is safe on a live DB: vertical `code`/`name`/`order` are re-synced, b
 
 No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
 
+## Demo seed (`npm run seed:demo`)
+
+Demo content for development and E2E tests. It throws if `NODE_ENV=production`. It runs the base seed first, then adds:
+- **17 tours:** 2–3 published per vertical (among them Goa Coastal Escape, 4 days / easy / from ₹14,999, and Andaman & Nicobar Island Odyssey, 6 days / moderate / from ₹28,999) and 1 unpublished (`spiti-valley-winter-expedition`). Every tour has the tiers Essential / Explorer / VIP Palace at 1× / 1.25× / 1.7× of its base price.
+- **23 gear items** across all 8 categories and 5 climates, each linked to the tours it suits; 1 is inactive (`treklite-carbon-trekking-poles`).
+- **5 tags** (Waterproof, Lightweight, UV Protection, Quick Dry, Travel Friendly) and a hero image for any vertical that has none.
+
+Images are `{ url: https://picsum.photos/seed/<slug>/1200/800, path: null }`; affiliate URLs are `https://example.com/<slug>`.
+
+Idempotent by slug: a tour or gear item whose slug already exists is left untouched (admin edits survive), and only missing ones are created. The content lives in `scripts/demo/`; `scripts/seed-demo.js` exports `runDemoSeed()`.
+
 ## Testing
 
 - Use Vitest + Supertest against `app.js`, with mongodb-memory-server providing a fresh DB per test file and collections cleared between tests.
@@ -494,12 +536,33 @@ No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
   - upload type and size rejection
   - the error-handler mapping (duplicate key, CastError, malformed JSON)
 - Coverage threshold: **80% lines and branches** on `src/`, excluding `server.js` and `config/db.js`.
+- `tests/contract.test.js` walks the mounted router stack and sends an unknown key to every POST/PATCH route. A new body route is picked up automatically; a new top-level mount path or URL parameter name must be added to the lists at the top of that file (the test fails until it is).
+
+### E2E harness (`npm run e2e:server`)
+
+`scripts/e2e-server.js` is what the frontends run their Playwright suites against. It is development only (it throws if `NODE_ENV=production`) and nothing in `src/` imports it.
+
+1. Starts an in-memory MongoDB (mongodb-memory-server). `MONGODB_URI` is ignored, so the real database is never touched.
+2. Runs the seed and the demo seed against it.
+3. Creates three users, plus activity for the dashboard and lists: 3 confirmed bookings for the customer (`ADV-TT-…-000001`, `ADV-GS-…-000001`, `ADV-PP-…-000001`), 6 affiliate clicks across 3 gear items, and 2 newsletter subscribers.
+4. Signs a session JWT for each user with `JWT_SECRET` and writes `/e2e/.auth.json` at the repo root (gitignored):
+   ```json
+   { "customer": "<jwt>", "incompleteCustomer": "<jwt>", "admin": "<jwt>" }
+   ```
+   Each value is the value of the `adv_session` cookie. `customer` has a complete profile, `incompleteCustomer` has a name but no phone, `admin` has the admin role (set directly on the user; `ADMIN_EMAILS` is not involved).
+5. Serves the real app on port **5000**.
+
+Nothing is mocked: every other env var is read from `.env` as usual, and Supabase is real, so uploads made during E2E runs land in the dev bucket and the suite must delete what it creates. All data is lost when the process stops; restart it for a clean state.
+
+Flags, used by `tests/e2e-server.test.js`: `--port=<n>` and `--auth-file=<path>`.
+
+The rate limiters are live in the harness. A suite that would pass 300 requests in 15 minutes from one address should send a distinct `X-Forwarded-For` per test or worker, as the backend tests do.
 
 ## Definition of done
 
 1. `npm run lint` is clean, with no warnings left behind.
 2. `npm test` passes and coverage meets the threshold.
 3. `npm audit` reports 0 vulnerabilities.
-4. There is no dead code, no unused dependencies in `package.json`, and no `console.*`.
+4. There is no dead code, no unused dependencies in `package.json`, and no `console.*`. `npx knip` reports nothing.
 5. Every new endpoint follows routes → validator → controller (try/catch → `next(err)`) → service, and responds with `{ success, message, … }`.
 6. `.env.example` and this file are updated if env vars or endpoints changed.

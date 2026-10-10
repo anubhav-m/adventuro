@@ -13,6 +13,13 @@ const REDACT_PATHS = [
   '*.*.phone',
 ];
 
+// Query strings are left out of request logs: an admin search term can be a customer's
+// phone number or email address.
+export const serializeRequest = ({ query: _query, url, ...request }) => ({
+  ...request,
+  url: url.split('?')[0],
+});
+
 export const createLogger = ({ level = env.LOG_LEVEL, destination } = {}) =>
   pino({ level, redact: { paths: REDACT_PATHS, censor: '[REDACTED]' } }, destination);
 
