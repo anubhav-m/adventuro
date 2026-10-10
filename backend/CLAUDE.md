@@ -99,7 +99,7 @@ backend/
 │   │                          # + schemaHelpers.js (toJSONOptions, imageSchema, integerValidator, isHttpsUrl)
 │   ├── validators/            # Zod schemas per domain (+ common.js: objectId, slug, pagination, phone)
 │   ├── middlewares/
-│   │   ├── auth.js            # requireAuth, requireAdmin, requireCompleteProfile
+│   │   ├── auth.js            # requireAuth, optionalAuth, requireAdmin, requireCompleteProfile
 │   │   ├── validate.js
 │   │   ├── rateLimiters.js
 │   │   ├── upload.js
@@ -275,7 +275,7 @@ Query rules:
 | POST | `/auth/google` | authLimiter | Body `{ credential }`. Upserts the user, syncs the role, sets the cookie |
 | GET | `/auth/me` | requireAuth | `{ user }` |
 | POST | `/auth/logout` | — | Clears the cookie; succeeds even with no session |
-| PATCH | `/users/me` | requireAuth | Body `{ name?, phone?, themePreference? }` |
+| PATCH | `/users/me` | requireAuth | Body `{ name?, phone?, themePreference? }`, at least one field. Returns `{ user }` |
 | GET | `/verticals` | — | All 6, ordered |
 | GET | `/verticals/:key` | — | Vertical + its published tours (cards) |
 | GET | `/tours` | — | `?vertical&state&difficulty&q&page&limit`, published only |
@@ -317,9 +317,11 @@ When a tour or gear item's images are removed or replaced in an update, the serv
 
 **Sign-in (`auth.service`)**
 1. Verify the token with `OAuth2Client.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID })` and require `email_verified`.
-2. Upsert by `googleId`. On first sign-in, set name and avatar from Google.
-3. Set `role` from `ADMIN_EMAILS` on **every** sign-in.
+2. Upsert by `googleId`. On first sign-in, set name and avatar from Google; later sign-ins never overwrite them.
+3. Set `email` (lowercased) and `role` from `ADMIN_EMAILS` on **every** sign-in.
 4. Update `lastLoginAt`.
+
+Any verification failure (bad token, wrong audience, unverified email, Google unreachable) is 401 `INVALID_GOOGLE_TOKEN`. `google-auth-library` error messages can contain the raw token, so they are never logged or returned.
 
 **Booking create (`booking.service`)**
 1. Load the tour, which must be published, along with its vertical.
@@ -363,7 +365,8 @@ Run the independent pipelines with `Promise.all`.
 **Session**
 - The JWT is HS256 with `algorithms: ['HS256']` passed explicitly to `verify`, payload `{ sub }`, expiring per `JWT_EXPIRES_IN`.
 - The cookie is `adv_session`: `httpOnly`, `secure` in production, `sameSite: 'lax'`, `path: '/'`, `maxAge` matching the JWT.
-- `requireAuth` **loads the user from the DB on every request**, so role changes and deletions take effect immediately.
+- `requireAuth` **loads the user from the DB on every request**, so role changes and deletions take effect immediately. `req.user` is a hydrated Mongoose document (`req.user.id`, `req.user.profileComplete`).
+- `optionalAuth` sets `req.user` for a valid session and otherwise continues as a guest; it never errors and never clears the cookie.
 - `sameSite: 'lax'` on a first-party cookie (via the Vercel rewrites) is the CSRF defense. Never move the token to `localStorage` or response bodies.
 
 **Authorization and trust**
@@ -425,11 +428,12 @@ No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
 
 - Use Vitest + Supertest against `app.js`, with mongodb-memory-server providing a fresh DB per test file and collections cleared between tests.
 - Mock **external services only**:
-  - `google-auth-library` verification, via `vi.mock` on the auth service's verifier
+  - `google-auth-library` verification, via `vi.mock('google-auth-library')` with a stub `OAuth2Client.verifyIdToken` (see `tests/auth.test.js`)
   - the Supabase storage client (`config/supabase.js`)
 
   Never mock Mongoose.
-- `helpers/authAgent(user)` signs a JWT directly and returns a Supertest agent with the cookie set.
+- `helpers/authAgent(user, app?)` signs a JWT directly and returns a Supertest agent with the cookie set.
+- `authLimiter` allows 20 requests per test file, so keep `POST /auth/google` calls in one file under that; the limit itself is tested in `tests/auth.limiter.test.js`.
 - Every route group must test:
   - happy path, with exact status and envelope shape
   - validation failure (400 + `VALIDATION_ERROR`)

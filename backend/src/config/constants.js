@@ -82,6 +82,7 @@ export const LIMITS = Object.freeze({
   LONG_TEXT_MAX: 5000,
   URL_MAX: 2048,
   EMAIL_MAX: 254,
+  CREDENTIAL_MAX: 4096,
 });
 
 export const RATE_LIMITS = Object.freeze({
