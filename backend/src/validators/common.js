@@ -18,6 +18,8 @@ export const pagination = z.object({
     .default(LIMITS.PAGE_LIMIT_DEFAULT),
 });
 
+export const searchTerm = z.string().trim().min(LIMITS.SEARCH_Q_MIN).max(LIMITS.SEARCH_Q_MAX);
+
 export const dateOnly = z
   .string()
   .refine((value) => parseDateOnly(value) !== null, 'Invalid date, expected YYYY-MM-DD');

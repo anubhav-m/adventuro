@@ -109,9 +109,10 @@ backend/
 │       ├── AppError.js
 │       ├── response.js        # sendSuccess
 │       ├── cookies.js         # auth cookie options, set/clear helpers
-│       ├── escapeRegex.js
+│       ├── escapeRegex.js     # escapeRegex + containsRegex / exactRegex (literal, case-insensitive)
 │       ├── pagination.js
 │       ├── dates.js           # IST "tomorrow", date-only helpers
+│       ├── serialize.js       # `_id` → `id`, drops `__v` for `.lean()` results
 │       └── slugify.js
 ├── scripts/seed.js            # idempotent: 6 verticals + starter taxonomies
 ├── tests/
@@ -195,7 +196,8 @@ Status codes:
 - Body schemas use `.strict()`, so unknown keys are rejected. This is the mass-assignment protection. Never spread `req.body` into a model, and never accept `role`, `status`, `bookingNumber`, `totalAmount`, `clickCount`, or `profileComplete` from clients.
 - Use the shared `objectId`, `slug`, `phone` (`/^[6-9]\d{9}$/`), `pagination`, `dateOnly` (`YYYY-MM-DD`), and `httpsUrl` schemas from `validators/common.js`.
 - `validate` checks all three sources before responding, so one 400 lists every failing field. An unknown key is reported as `{ field: '<key>', message: 'Unknown field' }`.
-- Coerce query numbers with `z.coerce.number().int()` and bound them. Trim strings and give them max lengths. Search `q` must be 2–64 chars.
+- Coerce query numbers with `z.coerce.number().int()` and bound them. Trim strings and give them max lengths. Search `q` must be 2–64 chars (the shared `searchTerm` schema, used by `/search`, `/tours` and `/gear`).
+- Query schemas are not strict: unknown query keys are dropped. Express 5's default query parser does not build nested objects, so `?state[$ne]=x` arrives as the literal key `state[$ne]` and is dropped too.
 
 ## Data models
 
@@ -261,7 +263,8 @@ All models have timestamps. Every `toJSON` transform maps `_id` → `id` and str
 - `email` (unique, lowercase)
 
 Query rules:
-- Use `.lean()` for reads and select only the fields you need.
+- Use `.lean()` for reads and select only the fields you need. Lean results skip `toJSON`, so pass them through `serialize()` (`utils/serialize.js`) before returning them.
+- `sanitizeFilter` is on: wrap operator objects in a filter (`$in`, `$gte`, …) with `mongoose.trusted()`. `RegExp` values and top-level `$and` / `$or` need no wrapping.
 - Run independent queries with `Promise.all`.
 - Never return unbounded lists; paginate, max 50.
 
@@ -276,19 +279,19 @@ Query rules:
 | GET | `/auth/me` | requireAuth | `{ user }` |
 | POST | `/auth/logout` | — | Clears the cookie; succeeds even with no session |
 | PATCH | `/users/me` | requireAuth | Body `{ name?, phone?, themePreference? }`, at least one field. Returns `{ user }` |
-| GET | `/verticals` | — | All 6, ordered |
-| GET | `/verticals/:key` | — | Vertical + its published tours (cards) |
-| GET | `/tours` | — | `?vertical&state&difficulty&q&page&limit`, published only |
-| GET | `/tours/:slug` | — | Full detail, published only |
-| GET | `/gear` | — | `?q&category&climate&tag&tour&vertical&sort(newest\|price_asc\|price_desc\|popular)&page&limit`, active only |
-| GET | `/gear/:id/go` | goLimiter, optionalAuth | Logs a GearClick, `$inc clickCount`, then 302 to `affiliateUrl` |
-| GET | `/taxonomies` | — | `?type` |
+| GET | `/verticals` | — | `{ verticals }`: all 6, by `order` |
+| GET | `/verticals/:key` | — | `{ vertical, tours }`: its published tour cards, newest first, at most 50. Unknown key is 404 |
+| GET | `/tours` | — | `?vertical&state&difficulty&q&page&limit`, published only, newest first. `{ tours }` (cards with `vertical { id, key, name, code }`) + `meta` |
+| GET | `/tours/:slug` | — | `{ tour }`: full detail with `vertical { id, key, name, code }` and tier ids, published only |
+| GET | `/gear` | — | `?q&category&climate&tag&tour&vertical&sort(newest\|price_asc\|price_desc\|popular)&page&limit`, active only. `{ gear }` (cards) + `meta` |
+| GET | `/gear/:id/go` | goLimiter, optionalAuth | Logs a GearClick, `$inc clickCount`, then 302 to `affiliateUrl`. Inactive or unknown gear is a 404 envelope |
+| GET | `/taxonomies` | — | `?type`. `{ taxonomies }` sorted by type then name |
 | GET | `/search` | searchLimiter | `?q`. Returns `{ tours: [≤5], gear: [≤5] }` |
 | POST | `/bookings` | requireAuth, requireCompleteProfile, bookingLimiter | Body `{ tourId, tierId, travelers, startDate 'YYYY-MM-DD' }` |
 | GET | `/bookings/me` | requireAuth | Paginated, newest first |
 | GET | `/bookings/:bookingNumber` | requireAuth | Owner (or admin) only. Others get 404 |
 | GET | `/bookings/:bookingNumber/ticket` | requireAuth | PDF (`Content-Disposition: attachment`). Owner (or admin) only |
-| POST | `/newsletter` | newsletterLimiter | Body `{ email }`. Idempotent: returns the same success whether new or existing (no enumeration) |
+| POST | `/newsletter` | newsletterLimiter | Body `{ email }`. Idempotent: always 200 with the same body whether new or existing (no enumeration) |
 
 ### Admin (`/admin/*`, requireAuth + requireAdmin applied once in `routes/admin/index.js`)
 
@@ -312,6 +315,16 @@ Query rules:
 | GET | `/admin/newsletter` | Paginated |
 
 When a tour or gear item's images are removed or replaced in an update, the service deletes the orphaned Supabase objects.
+
+### Public catalog behavior
+
+- **Tour card:** `id, title, slug, state, destination, tagline, durationDays, difficulty, coverImage, topActivities, startingPrice`.
+- **Gear card:** `id, name, slug, shortDescription, images, mrp, salePrice`, plus `category`, `climates[]`, `tags[]` populated as `{ id, name, slug }`. `affiliateUrl`, `clickCount`, `tours` and `description` are never in public responses; the only way to the affiliate URL is `/gear/:id/go`.
+- **Filters:** `vertical` takes a vertical key; `category` / `climate` / `tag` take a taxonomy slug of that type; `tour` takes a tour slug. A filter value that matches nothing (unknown key or slug, a slug of another taxonomy type, an unpublished tour) gives an empty page with 200, not a 404.
+- `/tours?state` is a case-insensitive exact match. `q` is a case-insensitive substring match on tour `title` / `state` / `destination` or gear `name`.
+- `/gear?vertical` resolves to that vertical's published tour ids and matches gear linked to any of them.
+- **Sorts:** `newest` (default) = `createdAt` desc, `price_asc` / `price_desc` = `salePrice`, `popular` = `clickCount` desc.
+- The affiliate click does not bump the gear's `updatedAt`.
 
 ## Key business logic
 
@@ -434,6 +447,7 @@ No admin user is seeded; admin access comes from `ADMIN_EMAILS`.
   Never mock Mongoose.
 - `helpers/authAgent(user, app?)` signs a JWT directly and returns a Supertest agent with the cookie set.
 - `authLimiter` allows 20 requests per test file, so keep `POST /auth/google` calls in one file under that; the limit itself is tested in `tests/auth.limiter.test.js`.
+- To stay under a per-IP limiter in a test file, send a distinct `X-Forwarded-For` per request (the app trusts one proxy hop); see `tests/newsletter.test.js`.
 - Every route group must test:
   - happy path, with exact status and envelope shape
   - validation failure (400 + `VALIDATION_ERROR`)

@@ -41,6 +41,13 @@ export const TAXONOMY_TYPE = Object.freeze({
   TAG: 'tag',
 });
 
+export const GEAR_SORT = Object.freeze({
+  NEWEST: 'newest',
+  PRICE_ASC: 'price_asc',
+  PRICE_DESC: 'price_desc',
+  POPULAR: 'popular',
+});
+
 export const ERROR_CODES = Object.freeze({
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   INVALID_FILE: 'INVALID_FILE',
@@ -83,6 +90,9 @@ export const LIMITS = Object.freeze({
   URL_MAX: 2048,
   EMAIL_MAX: 254,
   CREDENTIAL_MAX: 4096,
+  SEARCH_Q_MIN: 2,
+  SEARCH_Q_MAX: 64,
+  SEARCH_RESULTS_MAX: 5,
 });
 
 export const RATE_LIMITS = Object.freeze({
