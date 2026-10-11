@@ -4,7 +4,7 @@ Read `/CLAUDE.md` first. It holds the product rules, the API envelope, the error
 
 ## Stack
 
-- **Runtime:** Node.js 22.x (LTS; `engines` pins `22.x`, so use only APIs available in 22), `"type": "module"`, Express 5
+- **Runtime:** Node.js 24.x (LTS; `engines` pins `24.x`), `"type": "module"`, Express 5
 - **Data:** Mongoose (latest)
 - **Validation:** Zod for request validation and for env validation
 - **Auth:** `google-auth-library`, `jsonwebtoken`, `cookie-parser`

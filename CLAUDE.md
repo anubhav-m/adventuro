@@ -28,7 +28,7 @@ Adventuro is a travel-experience and adventure-gear web app built for a client. 
 | Layer | Choice |
 |---|---|
 | Database | MongoDB (Atlas) + Mongoose |
-| API | Node.js 22.x (LTS), Express 5, ES modules only |
+| API | Node.js 24.x (LTS), Express 5, ES modules only |
 | Frontends | React + Vite, React Router, TanStack Query, Tailwind CSS v4 |
 | Auth | Google Sign-In only (Google Identity Services → backend-issued httpOnly cookie) |
 | Images | Supabase Storage (public bucket, uploads go through the backend only) |
