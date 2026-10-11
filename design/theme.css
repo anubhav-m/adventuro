@@ -1,0 +1,239 @@
+/*
+ * Adventuro theme tokens. Source of truth: /DESIGN.md.
+ * Each app copies this file to src/styles/theme.css and maps it into Tailwind
+ * as described in /design/tailwind-tokens.md. Components never hardcode a colour,
+ * font, radius, or shadow.
+ *
+ * The theme is chosen by data-theme on <html>. A vertical is chosen by
+ * data-vertical on any element; everything inside it reads --color-accent*.
+ */
+
+:root {
+  /* Type families (Google Fonts: Archivo, Onest, Libre Caslon Text) */
+  --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+  --font-display-stretch: 125%;
+
+  /* Type scale */
+  --text-hero: clamp(3rem, 11vw, 10rem);
+  --text-h1: clamp(2.25rem, 5vw, 4rem);
+  --text-h2: clamp(1.75rem, 3.2vw, 2.75rem);
+  --text-h3: 1.5rem;
+  --text-h4: 1.25rem;
+  --text-lead: clamp(1.25rem, 2.2vw, 2.125rem);
+  --text-body-lg: 1.125rem;
+  --text-body: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.8125rem;
+
+  --leading-display: 0.9;
+  --leading-heading: 1.1;
+  --leading-body: 1.55;
+  --tracking-display: -0.03em;
+  --tracking-heading: -0.015em;
+
+  /* Layout */
+  --space-gutter: clamp(1rem, 4vw, 3rem);
+  --space-section: clamp(4rem, 9vw, 8rem);
+  --container-content: 80rem;
+  --container-prose: 42rem;
+
+  /* Shape */
+  --radius-plate: 4px;
+  --radius-field: 10px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+  --border-hairline: 1px;
+  --border-ink: 2px;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 420ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Vertical inks. The same in both themes: a vertical is a flat field of its ink. */
+  --color-accent-tidetrail: #19c2c9;
+  --color-on-accent-tidetrail: #121212;
+  --color-accent-goldensaga: #f2a81d;
+  --color-on-accent-goldensaga: #121212;
+  --color-accent-peakpulse: #1f58f2;
+  --color-on-accent-peakpulse: #ffffff;
+  --color-accent-elitescape: #14734e;
+  --color-on-accent-elitescape: #f1ede4;
+  --color-accent-urbanecho: #ff3d7f;
+  --color-on-accent-urbanecho: #121212;
+  --color-accent-grand-india-tour: #ff6a1a;
+  --color-on-accent-grand-india-tour: #121212;
+
+  /* Terrain patterns, drawn in each vertical's on-accent colour. Lay over the accent fill. */
+  --pattern-tidetrail: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='22'%3E%3Cpath d='M0 11c8-10 16-10 24 0s16 10 24 0' fill='none' stroke='%23121212' stroke-width='3'/%3E%3C/svg%3E");
+  --pattern-goldensaga: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='4' cy='4' r='2.4' fill='%23121212'/%3E%3Ccircle cx='13' cy='13' r='2.4' fill='%23121212'/%3E%3C/svg%3E");
+  --pattern-peakpulse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='44'%3E%3Cpath d='M0 41Q32 41 48 5Q64 41 96 41M24 41Q40 41 48 24Q56 41 72 41' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pattern-elitescape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52'%3E%3Cg fill='none' stroke='%23f1ede4' stroke-width='2.5'%3E%3Cpath d='M4 4h44v44H4zM26 4v15M26 33v15M4 26h15M33 26h15'/%3E%3Ccircle cx='26' cy='26' r='7'/%3E%3C/g%3E%3C/svg%3E");
+  --pattern-urbanecho: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='28'%3E%3Cg fill='%23121212'%3E%3Cpath d='M3 3h18v10H3zM25 3h8v10h-8zM3 17h10v8H3zM17 17h16v8H17z'/%3E%3C/g%3E%3C/svg%3E");
+  --pattern-grand-india-tour: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Cpath d='M0 12h28' fill='none' stroke='%23121212' stroke-width='5'/%3E%3C/svg%3E");
+
+  /* Default accent outside any vertical: the route orange. */
+  --color-accent: var(--color-brand);
+  --color-on-accent: var(--color-on-brand);
+  --color-accent-text: var(--color-brand-text);
+  --color-accent-tint: var(--color-brand-tint);
+  --pattern-accent: var(--pattern-grand-india-tour);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #121212;
+  --color-surface: #1b1b1a;
+  --color-surface-raised: #252523;
+  --color-surface-sunken: #0b0b0b;
+  --color-border: #3b3a37;
+  --color-border-strong: #8a857c;
+
+  --color-text: #f1ede4;
+  --color-text-muted: #b5b0a6;
+  --color-text-subtle: #9a958b;
+
+  --color-primary: #f1ede4;
+  --color-primary-hover: #ffffff;
+  --color-on-primary: #121212;
+
+  --color-brand: #ff6a1a;
+  --color-on-brand: #121212;
+  --color-brand-text: #ff7a33;
+  --color-brand-tint: #381a08;
+
+  --color-success: #5bd08f;
+  --color-success-tint: #12301f;
+  --color-warning: #f2c14e;
+  --color-warning-tint: #33280a;
+  --color-danger: #ff7a7a;
+  --color-danger-tint: #3a1414;
+  --color-info: #7fb0ff;
+  --color-info-tint: #12213d;
+
+  --color-focus-inner: #f1ede4;
+  --color-focus-outer: #121212;
+  --color-overlay: rgb(0 0 0 / 0.72);
+
+  --color-accent-text-tidetrail: #19c2c9;
+  --color-accent-tint-tidetrail: #0e2b2d;
+  --color-accent-text-goldensaga: #f2a81d;
+  --color-accent-tint-goldensaga: #33250a;
+  --color-accent-text-peakpulse: #7da2ff;
+  --color-accent-tint-peakpulse: #101e40;
+  --color-accent-text-elitescape: #4cc790;
+  --color-accent-tint-elitescape: #0e2a1e;
+  --color-accent-text-urbanecho: #ff5c93;
+  --color-accent-tint-urbanecho: #3a0f1e;
+  --color-accent-text-grand-india-tour: #ff7a33;
+  --color-accent-tint-grand-india-tour: #381a08;
+
+  --shadow-raised: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-overlay: 0 24px 64px rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-bg: #f1ede4;
+  --color-surface: #faf8f3;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #e6e1d6;
+  --color-border: #d2ccbf;
+  --color-border-strong: #7a756b;
+
+  --color-text: #121212;
+  --color-text-muted: #55514a;
+  --color-text-subtle: #645f57;
+
+  --color-primary: #121212;
+  --color-primary-hover: #2a2a28;
+  --color-on-primary: #f1ede4;
+
+  --color-brand: #ff6a1a;
+  --color-on-brand: #121212;
+  --color-brand-text: #a83d00;
+  --color-brand-tint: #ffdfc8;
+
+  --color-success: #116a3c;
+  --color-success-tint: #d9efdf;
+  --color-warning: #7a5200;
+  --color-warning-tint: #f7e5b5;
+  --color-danger: #b3261e;
+  --color-danger-tint: #f8d9d4;
+  --color-info: #1d4fb8;
+  --color-info-tint: #d8e3fa;
+
+  --color-focus-inner: #121212;
+  --color-focus-outer: #f1ede4;
+  --color-overlay: rgb(18 18 18 / 0.56);
+
+  --color-accent-text-tidetrail: #0a6e72;
+  --color-accent-tint-tidetrail: #cdeff0;
+  --color-accent-text-goldensaga: #7d5200;
+  --color-accent-tint-goldensaga: #fbe6b8;
+  --color-accent-text-peakpulse: #1a49cc;
+  --color-accent-tint-peakpulse: #d9e3ff;
+  --color-accent-text-elitescape: #106341;
+  --color-accent-tint-elitescape: #d3ebdd;
+  --color-accent-text-urbanecho: #bf0f4c;
+  --color-accent-tint-urbanecho: #ffd9e4;
+  --color-accent-text-grand-india-tour: #a83d00;
+  --color-accent-tint-grand-india-tour: #ffdfc8;
+
+  --shadow-raised: 0 8px 24px rgb(18 18 18 / 0.12);
+  --shadow-overlay: 0 24px 64px rgb(18 18 18 / 0.2);
+}
+
+[data-vertical='tidetrail'] {
+  --color-accent: var(--color-accent-tidetrail);
+  --color-on-accent: var(--color-on-accent-tidetrail);
+  --color-accent-text: var(--color-accent-text-tidetrail);
+  --color-accent-tint: var(--color-accent-tint-tidetrail);
+  --pattern-accent: var(--pattern-tidetrail);
+}
+
+[data-vertical='goldensaga'] {
+  --color-accent: var(--color-accent-goldensaga);
+  --color-on-accent: var(--color-on-accent-goldensaga);
+  --color-accent-text: var(--color-accent-text-goldensaga);
+  --color-accent-tint: var(--color-accent-tint-goldensaga);
+  --pattern-accent: var(--pattern-goldensaga);
+}
+
+[data-vertical='peakpulse'] {
+  --color-accent: var(--color-accent-peakpulse);
+  --color-on-accent: var(--color-on-accent-peakpulse);
+  --color-accent-text: var(--color-accent-text-peakpulse);
+  --color-accent-tint: var(--color-accent-tint-peakpulse);
+  --pattern-accent: var(--pattern-peakpulse);
+}
+
+[data-vertical='elitescape'] {
+  --color-accent: var(--color-accent-elitescape);
+  --color-on-accent: var(--color-on-accent-elitescape);
+  --color-accent-text: var(--color-accent-text-elitescape);
+  --color-accent-tint: var(--color-accent-tint-elitescape);
+  --pattern-accent: var(--pattern-elitescape);
+}
+
+[data-vertical='urbanecho'] {
+  --color-accent: var(--color-accent-urbanecho);
+  --color-on-accent: var(--color-on-accent-urbanecho);
+  --color-accent-text: var(--color-accent-text-urbanecho);
+  --color-accent-tint: var(--color-accent-tint-urbanecho);
+  --pattern-accent: var(--pattern-urbanecho);
+}
+
+[data-vertical='grand-india-tour'] {
+  --color-accent: var(--color-accent-grand-india-tour);
+  --color-on-accent: var(--color-on-accent-grand-india-tour);
+  --color-accent-text: var(--color-accent-text-grand-india-tour);
+  --color-accent-tint: var(--color-accent-tint-grand-india-tour);
+  --pattern-accent: var(--pattern-grand-india-tour);
+}

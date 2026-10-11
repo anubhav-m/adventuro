@@ -11,6 +11,9 @@ Adventuro is a travel-experience and adventure-gear web app built for a client. 
 ```
 /
 ├── CLAUDE.md      ← this file: product, scope, UI flow, shared contracts
+├── PRODUCT.md     ← audience, positioning, brand commitments
+├── DESIGN.md      ← design system: colour, type, components, per-vertical themes
+├── design/        ← theme.css (token source of truth), tailwind-tokens.md, reference sketch
 ├── backend/       ← Express + MongoDB REST API          → backend/CLAUDE.md
 ├── frontend/      ← customer-facing React app           → frontend/CLAUDE.md
 └── admin/         ← admin React app (dashboard + panel) → admin/CLAUDE.md
@@ -26,7 +29,7 @@ Adventuro is a travel-experience and adventure-gear web app built for a client. 
 |---|---|
 | Database | MongoDB (Atlas) + Mongoose |
 | API | Node.js 22.x (LTS), Express 5, ES modules only |
-| Frontends | React + Vite, React Router, TanStack Query, Tailwind CSS |
+| Frontends | React + Vite, React Router, TanStack Query, Tailwind CSS v4 |
 | Auth | Google Sign-In only (Google Identity Services → backend-issued httpOnly cookie) |
 | Images | Supabase Storage (public bucket, uploads go through the backend only) |
 | Deploy | `frontend` + `admin` → Vercel; `backend` → Render. Each Vercel app rewrites `/api/*` to the backend, so the auth cookie is first-party. |
@@ -106,7 +109,12 @@ If a task seems to need anything on this list, **stop and ask**.
 
 ## UI flow (structure and behavior only)
 
-No colors, fonts, or theme tokens are decided yet. The visual design will be applied later. Build structure and behavior with neutral styling, and keep all styling in Tailwind classes driven by CSS variables so the theme can be swapped in one place.
+This section covers structure and behavior. The visual design is decided:
+
+- Design rules live in `/DESIGN.md`. Product context (audience, brand commitments) lives in `/PRODUCT.md`.
+- Theme tokens come from `/design/theme.css`. Each app copies it to `src/styles/theme.css` at scaffold and maps it into Tailwind as described in `/design/tailwind-tokens.md`.
+- All styling is Tailwind classes driven by those CSS variables. Never hardcode a colour, font, radius, or shadow in a component.
+- To change a token, edit `/design/theme.css`, copy it to both apps again, and update `/DESIGN.md` in the same change.
 
 ### Navbar (customer app, every page)
 1. **Adventuro logo**. Click goes home. Hover opens a menu listing the **6 verticals + Shop Gear**. The same menu must also open on keyboard focus/Enter and on tap (touch). Escape closes it.

@@ -2,12 +2,17 @@
 
 Read `/CLAUDE.md` first. It holds the product rules, the API envelope, the error codes, and the auth flow. This is a **separate app** from `frontend/`. It shares no code with it, but follows the **same conventions**, restated here so this folder stands on its own.
 
-Visual design is **not decided yet**. Use neutral styling. All colors, fonts, radii, and shadows come from CSS variables in `src/styles/theme.css` through the Tailwind config. Never hardcode them.
+Visual design is decided. Read `/DESIGN.md`, especially its **Admin app** section: same tokens as the customer app, but calmer and denser, with neutral grounds only.
+
+- Tokens come from `/design/theme.css`, copied unchanged to `src/styles/theme.css` at scaffold. Never edit the copy; change `/design/theme.css` and copy it again.
+- `src/styles/index.css` maps the tokens into Tailwind v4 exactly as `/design/tailwind-tokens.md` describes.
+- All colors, fonts, radii, and shadows come from those tokens. Never hardcode them.
+- No vertical fields, patterns, or terrain line here. A vertical shows as a small chip in its ink plus its name.
 
 ## Stack
 
 - React + Vite, JavaScript (ES modules, `.jsx`), React Router (latest), TanStack Query
-- `react-hook-form` + `zod` + `@hookform/resolvers`, Tailwind CSS, `lucide-react`, `sonner`
+- `react-hook-form` + `zod` + `@hookform/resolvers`, Tailwind CSS v4, `lucide-react`, `sonner`
 - `recharts` for dashboard charts
 - Google Identity Services, loaded directly, same as the customer app
 - Dev tools: Vitest, React Testing Library, MSW, ESLint (flat config + react-hooks), Prettier
@@ -24,7 +29,7 @@ Install everything at its latest stable version.
 ```
 admin/src/
 ├── main.jsx, App.jsx, router.jsx
-├── styles/ (index.css, theme.css)
+├── styles/ (index.css, theme.css — theme.css is a copy of /design/theme.css)
 ├── api/
 │   ├── client.js, ApiError.js, queryKeys.js
 │   └── auth.api.js, dashboard.api.js, verticals.api.js, tours.api.js, gear.api.js,

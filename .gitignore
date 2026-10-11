@@ -5,3 +5,7 @@ node_modules/
 e2e/.auth*.json
 BUILD_PROMPTS.md
 PROGRESS.md
+.impeccable/mocks/
+.impeccable/questions/
+.impeccable/config.local.json
+.impeccable/hook.cache.json

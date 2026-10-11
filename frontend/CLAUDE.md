@@ -2,7 +2,12 @@
 
 Read `/CLAUDE.md` first. It holds the product rules, the **UI flow** (page structure), the API envelope, the error codes, and the auth flow. This file covers how the customer app is built.
 
-Visual design (colors, typography, theme tokens) is **not decided yet** and will be applied later. Use neutral styling. Every color, radius, shadow, and font comes from CSS variables in `src/styles/theme.css`, referenced through the Tailwind config. Never hardcode a hex value or font in a component.
+Visual design is decided. Read `/DESIGN.md` (rules) and `/PRODUCT.md` (audience and brand) before building UI.
+
+- Tokens come from `/design/theme.css`, copied unchanged to `src/styles/theme.css` at scaffold. Never edit the copy; change `/design/theme.css` and copy it again.
+- `src/styles/index.css` maps the tokens into Tailwind v4 exactly as `/design/tailwind-tokens.md` describes, and loads the three Google Fonts named there.
+- Every color, radius, shadow, and font comes from those tokens. Never hardcode a hex value or font in a component.
+- A vertical's theme is applied by putting `data-vertical="{key}"` on the page or section wrapper and using the `accent` utilities inside it. Components never name a vertical's colour.
 
 ## Stack
 
@@ -10,7 +15,7 @@ Visual design (colors, typography, theme tokens) is **not decided yet** and will
 - React Router (latest), with lazy-loaded routes
 - TanStack Query for **all** server state
 - `react-hook-form` + `zod` + `@hookform/resolvers` for forms
-- Tailwind CSS
+- Tailwind CSS v4 (CSS-first config in `src/styles/index.css`, no `tailwind.config.js`)
 - `lucide-react` for icons, `sonner` for toasts
 - Google Identity Services, loaded directly from `https://accounts.google.com/gsi/client` and wrapped in one component. No wrapper library.
 - Dev tools: Vitest, React Testing Library, MSW, ESLint (flat config + react-hooks plugin), Prettier
@@ -40,8 +45,8 @@ frontend/src/
 ├── App.jsx                    # providers: QueryClient, Theme, Router, Toaster
 ├── router.jsx                 # route table, lazy pages, guards
 ├── styles/
-│   ├── index.css              # tailwind layers
-│   └── theme.css              # CSS variables (placeholder neutral values until design lands)
+│   ├── index.css              # tailwind import, token mapping, base styles (per /design/tailwind-tokens.md)
+│   └── theme.css              # copy of /design/theme.css
 ├── api/
 │   ├── client.js              # fetch wrapper: credentials 'include', JSON, unwraps envelope, throws ApiError
 │   ├── ApiError.js            # { status, code, fieldErrors }
@@ -84,7 +89,7 @@ frontend/src/
 └── lib/
     ├── errors.js              # getErrorMessage(err), getFieldError(err, field)
     ├── format.js              # formatPrice (Intl en-IN INR, 0 decimals), formatDate (IST, "15 Sep 2026")
-    ├── constants.js           # VERTICALS meta (key, name, route, icon), THEME, limits
+    ├── constants.js           # VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME, limits
     ├── schemas.js             # zod form schemas (profile, booking, newsletter)
     └── storage.js             # safe localStorage/sessionStorage helpers (try/catch)
 ```
@@ -143,7 +148,7 @@ frontend/src/
 ## Theme
 
 - Values are `system | light | dark`, default `system`.
-- `ThemeProvider` resolves `system` with `matchMedia('(prefers-color-scheme: dark)')`, listens for changes, and sets `data-theme` on `<html>`.
+- `ThemeProvider` resolves `system` with `matchMedia('(prefers-color-scheme: dark)')`, listens for changes, and sets `data-theme` (`light` or `dark`) on `<html>`. The tokens in `theme.css` have no values without it.
 - Persistence:
   - **Signed in:** the source is `user.themePreference`. A change updates the UI optimistically, then `PATCH /users/me { themePreference }`. If the request fails, roll back and show a toast.
   - **Guest:** localStorage.

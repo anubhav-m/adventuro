@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T10:11:17Z",
+  "title": "Design System: Adventuro",
+  "extensions": {
+    "colorMeta": {
+      "wall": {
+        "role": "neutral",
+        "displayName": "Grip Black",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#1b1b1a",
+          "#252523",
+          "#3b3a37",
+          "#8a857c",
+          "#b5b0a6",
+          "#f1ede4"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "tonalRamp": [
+          "#121212",
+          "#55514a",
+          "#645f57",
+          "#7a756b",
+          "#d2ccbf",
+          "#e6e1d6",
+          "#f1ede4",
+          "#faf8f3"
+        ]
+      },
+      "route-orange": {
+        "role": "secondary",
+        "displayName": "Route Orange",
+        "tonalRamp": [
+          "#381a08",
+          "#6b2a05",
+          "#a83d00",
+          "#d9530c",
+          "#ff6a1a",
+          "#ff7a33",
+          "#ffb088",
+          "#ffdfc8"
+        ]
+      },
+      "tide-lagoon": {
+        "role": "tertiary",
+        "displayName": "Lagoon",
+        "tonalRamp": [
+          "#0e2b2d",
+          "#0a4d50",
+          "#0a6e72",
+          "#12999e",
+          "#19c2c9",
+          "#63d8dc",
+          "#a3e7e9",
+          "#cdeff0"
+        ]
+      },
+      "saga-marigold": {
+        "role": "tertiary",
+        "displayName": "Marigold",
+        "tonalRamp": [
+          "#33250a",
+          "#5c3c00",
+          "#7d5200",
+          "#b87b0c",
+          "#f2a81d",
+          "#f6c15c",
+          "#f9d68f",
+          "#fbe6b8"
+        ]
+      },
+      "peak-cobalt": {
+        "role": "tertiary",
+        "displayName": "Cobalt",
+        "tonalRamp": [
+          "#101e40",
+          "#14338f",
+          "#1a49cc",
+          "#1f58f2",
+          "#5580f7",
+          "#7da2ff",
+          "#b0c5ff",
+          "#d9e3ff"
+        ]
+      },
+      "elite-bottle-green": {
+        "role": "tertiary",
+        "displayName": "Bottle Green",
+        "tonalRamp": [
+          "#0e2a1e",
+          "#0d4a31",
+          "#106341",
+          "#14734e",
+          "#2a9c6c",
+          "#4cc790",
+          "#99dcbb",
+          "#d3ebdd"
+        ]
+      },
+      "urban-rani-pink": {
+        "role": "tertiary",
+        "displayName": "Rani Pink",
+        "tonalRamp": [
+          "#3a0f1e",
+          "#7d0a32",
+          "#bf0f4c",
+          "#e62a69",
+          "#ff3d7f",
+          "#ff5c93",
+          "#ffa3c2",
+          "#ffd9e4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "hero": {
+        "displayName": "Hero",
+        "purpose": "The ADVENTURO wordmark on the home page only. Archivo at font-stretch 125%, uppercase."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles, vertical names, section headings. Archivo at font-stretch 125%."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Tagline and subtitles. Libre Caslon Text italic, at most once per section."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, tier names, panel headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Copy, capped at 42rem."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, chips, form labels, table headers."
+      },
+      "body-lg": {
+        "displayName": "Body large",
+        "purpose": "Intro paragraphs."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-raised",
+        "value": "0 8px 24px rgb(0 0 0 / 0.5)",
+        "purpose": "Dropdowns, logo menu, search results. Dark theme value; see design/theme.css for light."
+      },
+      {
+        "name": "shadow-overlay",
+        "value": "0 24px 64px rgb(0 0 0 / 0.6)",
+        "purpose": "Modals and bottom sheets. Dark theme value; see design/theme.css for light."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "120ms",
+        "purpose": "Hover and press."
+      },
+      {
+        "name": "duration-base",
+        "value": "200ms",
+        "purpose": "Menus, chips, fades."
+      },
+      {
+        "name": "duration-slow",
+        "value": "420ms",
+        "purpose": "Modal, sheet, terrain rise."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Default easing."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Things that move and return."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action. Always the inverse of the ground, never a vertical's ink.",
+      "html": "<button class=\"ds-btn-primary\">Book Now</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; height: 52px; padding: 0 28px; border: 0; border-radius: 999px; background: var(--color-primary, #f1ede4); color: var(--color-on-primary, #121212); font: 800 17px Onest, system-ui, sans-serif; cursor: pointer; transition: background-color 120ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-btn-primary:hover { background: var(--color-primary-hover, #ffffff); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-focus-inner, #f1ede4); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-focus-outer, #121212); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outline pill for the second action. Fills with the text colour on hover.",
+      "html": "<button class=\"ds-btn-secondary\">Explore Gear Store</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; height: 52px; padding: 0 28px; border: 2px solid var(--color-text, #f1ede4); border-radius: 999px; background: transparent; color: var(--color-text, #f1ede4); font: 800 17px Onest, system-ui, sans-serif; cursor: pointer; transition: background-color 120ms cubic-bezier(0.2, 0.8, 0.2, 1), color 120ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-btn-secondary:hover { background: var(--color-text, #f1ede4); color: var(--color-bg, #121212); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-focus-inner, #f1ede4); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-focus-outer, #121212); }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Filter chip. Selected state fills with the current accent.",
+      "html": "<button class=\"ds-chip\">Beach</button><button class=\"ds-chip ds-chip-selected\">Mountain</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; margin-right: 8px; border: 1px solid var(--color-border-strong, #8a857c); border-radius: 999px; background: transparent; color: var(--color-text, #f1ede4); font: 700 14px Onest, system-ui, sans-serif; cursor: pointer; } .ds-chip:hover { border-color: var(--color-text, #f1ede4); } .ds-chip-selected { background: var(--color-accent, #ff6a1a); border-color: var(--color-accent, #ff6a1a); color: var(--color-on-accent, #121212); } .ds-chip:focus-visible { outline: 2px solid var(--color-focus-inner, #f1ede4); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-focus-outer, #121212); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labelled input on the raised surface.",
+      "html": "<label class=\"ds-field\"><span>Phone number</span><input class=\"ds-input\" placeholder=\"10-digit mobile number\"></label>",
+      "css": ".ds-field { display: grid; gap: 6px; color: var(--color-text, #f1ede4); font: 700 14px Onest, system-ui, sans-serif; } .ds-input { height: 48px; padding: 0 14px; border: 1px solid var(--color-border-strong, #8a857c); border-radius: 10px; background: var(--color-surface-raised, #252523); color: var(--color-text, #f1ede4); font: 400 16px Onest, system-ui, sans-serif; } .ds-input::placeholder { color: var(--color-text-subtle, #9a958b); } .ds-input:focus-visible { border-color: var(--color-text, #f1ede4); outline: 2px solid var(--color-focus-inner, #f1ede4); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-focus-outer, #121212); }"
+    },
+    {
+      "name": "Tour Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Plate with state, title, italic tagline, and price. Border takes the accent on hover.",
+      "html": "<article class=\"ds-card\"><span class=\"ds-card-state\">Goa</span><h3 class=\"ds-card-title\">Goa Coastal Escape</h3><p class=\"ds-card-tag\">Sunsets, sea, and one parasail</p><p class=\"ds-card-price\">from <b>₹14,999</b></p></article>",
+      "css": ".ds-card { max-width: 320px; padding: 20px; border: 1px solid var(--color-border, #3b3a37); border-radius: 4px; background: var(--color-surface, #1b1b1a); color: var(--color-text, #f1ede4); font-family: Onest, system-ui, sans-serif; transition: border-color 120ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-card:hover { border-color: var(--color-accent, #ff6a1a); } .ds-card-state { color: var(--color-accent-text, #ff7a33); font-weight: 700; font-size: 14px; } .ds-card-title { margin: 4px 0; font-size: 24px; font-weight: 800; line-height: 1.2; } .ds-card-tag { margin: 0 0 16px; font: italic 400 17px 'Libre Caslon Text', Georgia, serif; color: var(--color-text-muted, #b5b0a6); } .ds-card-price { margin: 0; font-size: 14px; color: var(--color-text-muted, #b5b0a6); } .ds-card-price b { font-size: 20px; font-weight: 800; color: var(--color-text, #f1ede4); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Vertical Field",
+      "kind": "custom",
+      "refersTo": "button-on-accent",
+      "description": "A vertical's region: solid ink, drawn pattern on top, name on flat colour, on-accent button.",
+      "html": "<section class=\"ds-field-tide\"><div class=\"ds-field-pattern\"></div><h2 class=\"ds-field-name\">TideTrail</h2><button class=\"ds-field-btn\">Explore</button></section>",
+      "css": ".ds-field-tide { position: relative; max-width: 360px; padding: 120px 24px 24px; background: #19c2c9; color: #121212; overflow: hidden; } .ds-field-pattern { position: absolute; inset: 0 0 auto 0; height: 96px; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='22'%3E%3Cpath d='M0 11c8-10 16-10 24 0s16 10 24 0' fill='none' stroke='%23121212' stroke-width='3'/%3E%3C/svg%3E\"); } .ds-field-name { margin: 0 0 16px; font: 900 32px Archivo, 'Arial Black', sans-serif; font-stretch: 125%; letter-spacing: -0.015em; } .ds-field-btn { height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: #121212; color: #19c2c9; font: 800 15px Onest, system-ui, sans-serif; cursor: pointer; } .ds-field-btn:focus-visible { outline: 2px solid #121212; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Terrain Sheet",
+    "overview": "India drawn as one cross-section, coast to peak, in flat ink on a black wall. Each of the five travel verticals is a terrain: a solid field of one loud colour with one hand-drawn pattern in it. Grand India Tour is the dashed orange route that crosses all five. The page is the map; the verticals are places on it you can enter.",
+    "keyCharacteristics": [
+      "Flat ink only. Colour is a solid field, never a gradient, glow, or tint wash.",
+      "A vertical owns a whole region of the page, not an accent on a neutral card.",
+      "Two grounds: grip black and bone. Text is bone on black or black on bone.",
+      "One very wide, very heavy display face; one plain text face; one italic serif used sparingly.",
+      "Controls are pills. Containers are square-cornered plates.",
+      "No purple, in either theme."
+    ],
+    "rules": [
+      {
+        "name": "The Flat Ink Rule",
+        "body": "No gradients, glows, blurs, glass, or transparent colour washes. A colour is either fully there as a field or not there.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Field Rule",
+        "body": "One vertical per region. Two inks meet only edge to edge along the terrain line, never one inside another.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Asks Rule",
+        "body": "The main action is bone or black. On a vertical's field, the button is --color-on-accent with --color-accent text.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Purple Rule",
+        "body": "No purple or violet anywhere. UrbanEcho is rani pink.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Loud Voice Rule",
+        "body": "Archivo expanded is for names and headings only. Never for body, buttons, chips, or anything under 24px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat At Rest Rule",
+        "body": "Cards, buttons, chips, and inputs have no shadow in any state. Hover changes fill or border.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do give a vertical a whole region: a full-bleed field in its ink with its pattern.",
+      "Do keep the primary action bone-on-black or black-on-bone everywhere.",
+      "Do design the dark theme first and finish the light theme to the same standard.",
+      "Do show photos as clean plates with text beside them.",
+      "Do pair every colour signal (vertical, status) with a word or an icon."
+    ],
+    "donts": [
+      "Don't use purple or violet, in either theme.",
+      "Don't use gradients, glow, blur, glass, or translucent colour.",
+      "Don't put text over a darkened photo.",
+      "Don't put a small uppercase label above a heading.",
+      "Don't centre a hero headline over a subtitle over two buttons.",
+      "Don't hardcode a hex value, font name, radius, or shadow in a component."
+    ]
+  }
+}

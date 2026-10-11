@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Adventuro — home hero reference sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Libre+Caslon+Text:ital@1&family=Onest:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  :root{--wall:#121212;--ink:#F1EDE4;--ink-2:#B5B0A6;--k:#121212;--bone:#F1EDE4;
+    --tide:#19C2C9;--gold:#F2A81D;--urban:#FF3D7F;--peak:#1F58F2;--elite:#14734E;--grand:#FF6A1A;--grand-t:#FF6A1A}
+  [data-theme="light"]{--wall:#F1EDE4;--ink:#121212;--ink-2:#55514A;--grand-t:#B34100}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--wall);color:var(--ink);font-family:Onest,system-ui,sans-serif}
+  .x{font-family:Archivo,sans-serif;font-stretch:125%;font-weight:900}
+  nav{position:absolute;top:26px;left:48px;right:48px;display:flex;align-items:center;gap:34px}
+  .mark{font-size:24px;letter-spacing:.02em}
+  nav a{color:var(--ink);text-decoration:none;font-size:16px;font-weight:600}
+  .sp{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:10px;height:54px;padding:0 28px;border-radius:999px;font:800 17px Onest;border:2px solid var(--ink);cursor:pointer}
+  .btn.p{background:var(--ink);color:var(--wall)} .btn.s{color:var(--ink);background:transparent} .btn.sm{height:42px;padding:0 18px;font-size:14px}
+  h1{position:absolute;top:84px;left:44px;font-size:clamp(3rem,11vw,10rem);line-height:.86;letter-spacing:-.03em;white-space:nowrap}
+  .tag{position:absolute;top:246px;left:52px;font:italic 400 34px "Libre Caslon Text",Georgia,serif}
+  .side{position:absolute;top:240px;right:48px;width:410px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+  .side p{font-size:18px;line-height:1.45;color:var(--ink-2);font-weight:500}
+  .side b{color:var(--ink);font-weight:800}
+  .cta{display:flex;gap:12px}
+  .section{position:absolute;left:0;right:0;bottom:0;height:470px}
+  svg.terrain{position:absolute;inset:0;width:100%;height:100%}
+  .bands{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr)}
+  .band{position:relative;text-decoration:none;color:var(--k)}
+  .band.lt{color:var(--bone)}
+  .band .lab{position:absolute;left:26px;right:20px;bottom:26px}
+  .band .n{font-size:24px;letter-spacing:-.01em;display:block;line-height:1}
+  .band .d{font-size:14px;font-weight:700;display:block;margin-top:8px}
+  .band .go{position:absolute;right:0;top:-4px;font-size:24px;font-weight:800}
+  .route{position:absolute;left:48px;top:44px;display:inline-flex;align-items:center;gap:12px;height:44px;padding:0 20px;border-radius:999px;background:var(--grand);color:var(--k);font:800 14px Onest;text-decoration:none}
+  .mode{font:700 13px Onest;background:none;border:2px solid var(--ink);color:var(--ink);border-radius:999px;height:42px;padding:0 14px;cursor:pointer}
+</style>
+</head>
+<body>
+<nav>
+  <span class="mark x">ADVENTURO</span>
+  <a href="#">Verticals</a><a href="#">Shop Gear</a><a href="#">About Us</a>
+  <span class="sp"></span>
+  <a href="#">Search</a>
+  <button class="mode" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Light / Dark</button>
+  <span class="btn p sm">Sign in</span>
+</nav>
+
+<h1 class="x">ADVENTURO</h1>
+<div class="tag">From Coast to Camp • Peak to Palace</div>
+<div class="side">
+  <p><b>One India. Infinite Adventures.</b> Five ways to travel and one grand route across all of them, each trip built around the thing its place is known for.</p>
+  <div class="cta"><span class="btn p">Book Now ↓</span><span class="btn s">Explore Gear Store</span></div>
+</div>
+
+<div class="section">
+  <svg class="terrain" viewBox="0 0 1440 470" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <pattern id="wave" width="48" height="22" patternUnits="userSpaceOnUse"><path d="M0 11c8-10 16-10 24 0s16 10 24 0" fill="none" stroke="#121212" stroke-width="3"/></pattern>
+      <pattern id="dune" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2.4" fill="#121212"/><circle cx="13" cy="13" r="2.4" fill="#121212"/></pattern>
+      <pattern id="grid" width="36" height="28" patternUnits="userSpaceOnUse"><rect x="3" y="3" width="18" height="10" fill="#121212"/><rect x="25" y="3" width="8" height="10" fill="#121212"/><rect x="3" y="17" width="10" height="8" fill="#121212"/><rect x="17" y="17" width="16" height="8" fill="#121212"/></pattern>
+      <pattern id="garden" width="52" height="52" patternUnits="userSpaceOnUse"><rect x="4" y="4" width="44" height="44" fill="none" stroke="#F1EDE4" stroke-width="2.5"/><path d="M26 4V48M4 26H48" stroke="#F1EDE4" stroke-width="2.5"/><circle cx="26" cy="26" r="7" fill="#14734E" stroke="#F1EDE4" stroke-width="2.5"/></pattern>
+      <clipPath id="c1"><path d="M0 250C120 250 200 222 288 222V350H0Z"/></clipPath>
+      <clipPath id="c2"><path d="M288 222C346 222 376 178 428 178C480 178 512 222 576 222V350H288Z"/></clipPath>
+      <clipPath id="c4"><path d="M864 214C878 214 890 192 910 172C950 132 982 6 1032 22C1094 42 1114 244 1152 244V470H864Z"/></clipPath>
+    </defs>
+    <!-- flat ink fills below the ground line -->
+    <path d="M0 250C120 250 200 222 288 222V470H0Z" fill="#19C2C9"/>
+    <path d="M288 222C346 222 376 178 428 178C480 178 512 222 576 222V470H288Z" fill="#F2A81D"/>
+    <path d="M576 214H864V470H576Z" fill="#FF3D7F"/>
+    <path d="M864 214C878 214 890 192 910 172C950 132 982 6 1032 22C1094 42 1114 244 1152 244V470H864Z" fill="#1F58F2"/>
+    <path d="M1152 244C1380 244 1410 232 1440 232V470H1152Z" fill="#14734E"/>
+    <!-- drawn patterns, upper part of each band only -->
+    <rect x="0" y="216" width="288" height="134" fill="url(#wave)" clip-path="url(#c1)"/>
+    <rect x="288" y="170" width="288" height="180" fill="url(#dune)" clip-path="url(#c2)"/>
+    <rect x="576" y="226" width="288" height="124" fill="url(#grid)"/>
+    <rect x="1152" y="256" width="288" height="104" fill="url(#garden)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-width="3" clip-path="url(#c4)">
+      <path d="M864 262C898 258 920 232 946 210C976 182 998 92 1032 100C1072 110 1092 282 1152 286"/>
+      <path d="M864 310C908 306 934 284 960 264C988 242 1006 174 1034 180C1066 188 1084 324 1152 330"/>
+      <path d="M864 358C918 354 950 336 976 320C998 304 1012 254 1036 258C1062 264 1078 368 1152 374"/>
+    </g>
+    <!-- skyline and palace in the sky, flat ink -->
+    <g fill="#FF3D7F"><rect x="612" y="168" width="28" height="46"/><rect x="646" y="132" width="22" height="82"/><rect x="674" y="154" width="36" height="60"/><rect x="716" y="108" width="20" height="106"/><rect x="742" y="146" width="32" height="68"/><rect x="782" y="178" width="42" height="36"/></g>
+    <g fill="#14734E"><rect x="1244" y="204" width="124" height="38"/><path d="M1286 204a20 20 0 0 1 40 0Z"/><rect x="1252" y="186" width="11" height="18"/><rect x="1349" y="186" width="11" height="18"/></g>
+    <!-- Grand India route, in the sky above the ground line -->
+    <path d="M250 62C330 62 250 196 420 140C560 96 560 84 700 76C800 70 900 60 1010 -8" fill="none" stroke="var(--grand-t)" stroke-width="5" stroke-dasharray="14 10"/>
+    <path d="M1010 -8C1120 60 1150 180 1400 170" fill="none" stroke="var(--grand-t)" stroke-width="5" stroke-dasharray="14 10"/>
+    <circle cx="1400" cy="170" r="9" fill="var(--wall)" stroke="var(--grand-t)" stroke-width="5"/>
+  </svg>
+  <a class="route" href="#">Grand India Tour, one route through all five →</a>
+  <div class="bands">
+    <a class="band" href="#"><span class="lab"><span class="go">→</span><span class="n x">TideTrail</span><span class="d">Beaches • Islands • Coastal escapes</span></span></a>
+    <a class="band" href="#"><span class="lab"><span class="go">→</span><span class="n x">GoldenSaga</span><span class="d">Deserts • Culture • Royal heritage</span></span></a>
+    <a class="band" href="#"><span class="lab"><span class="go">→</span><span class="n x">UrbanEcho</span><span class="d">Cities • Food • Nightlife</span></span></a>
+    <a class="band lt" href="#"><span class="lab"><span class="go">→</span><span class="n x">PeakPulse</span><span class="d">Mountains • Treks • Adventure</span></span></a>
+    <a class="band lt" href="#"><span class="lab"><span class="go">→</span><span class="n x">EliteScape</span><span class="d">Luxury • Comfort • Exclusive escapes</span></span></a>
+  </div>
+</div>
+</body>
+</html>
