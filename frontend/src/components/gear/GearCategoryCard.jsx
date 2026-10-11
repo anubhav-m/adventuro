@@ -18,7 +18,12 @@ export function GearCategoryCard({ category }) {
       <Icon size={28} strokeWidth={1.75} aria-hidden="true" className="text-accent-text" />
       <span className="flex items-end justify-between gap-2">
         <span className="text-h4 font-extrabold">{category.name}</span>
-        <ArrowRight size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
+        <ArrowRight
+          size={20}
+          strokeWidth={1.75}
+          aria-hidden="true"
+          className="shrink-0 transition-transform duration-(--duration-base) ease-out motion-safe:group-hover:translate-x-1"
+        />
       </span>
     </Card>
   );

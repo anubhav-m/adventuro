@@ -264,7 +264,7 @@ Flat. Depth comes from ground steps (`bg` → `surface` → `surface-raised`) an
 
 ### Named Rules
 
-**The Flat At Rest Rule.** Cards, buttons, chips, and inputs have no shadow in any state. Hover changes fill or border.
+**The Flat At Rest Rule.** Cards, buttons, chips, and inputs have no shadow in any state. Hover changes fill or border, and may move the element (a card lifts 4px); it never adds a shadow.
 
 ## Shapes
 
@@ -296,8 +296,8 @@ Every interactive element has hover, focus-visible, active, and disabled states.
 
 ### Cards / Containers
 - `--color-surface`, 1px `--color-border`, plate radius, no shadow, 20px padding.
-- **Tour card:** photo plate on top (4:3). Then state in `--color-accent-text`, title (Title), tagline in Caslon italic, up to three activity chips, and a footer row with "from" price left and Explore / Book right. The duration badge sits on the photo's top-left corner. Hover: border becomes `--color-accent`.
-- **Gear card:** square image on `--color-surface-raised`, category, name, sale price with the MRP struck through in `--color-text-subtle`, Buy.
+- **Tour card:** photo plate on top (4:3). Then state in `--color-accent-text`, title (Title), tagline in Caslon italic, up to three activity chips, and a footer row with "from" price left and Explore / Book right. The duration badge sits on the photo's top-left corner. Hover: border becomes `--color-accent`, the card lifts 4px, and the photo grows 5% inside its plate.
+- **Gear card:** square image on `--color-surface-raised`, category, name, sale price with the MRP struck through in `--color-text-subtle`, Buy. Hover is the tour card's.
 - **Vertical card (home):** not a card. It is a band of the terrain section.
 
 ### Inputs / Fields
@@ -308,11 +308,12 @@ Every interactive element has hover, focus-visible, active, and disabled states.
 - The traveler stepper is two 44px pill buttons around a tabular number.
 
 ### Navigation
-- **Navbar:** `--color-bg`, no border until the page scrolls, then a 1px `--color-border` bottom edge. Wordmark left, links in Onest 600, icons right. Sticky.
+- **Navbar:** `--color-bg`, no border until the page scrolls, then a 1px `--color-border` bottom edge. Wordmark left, the Gear Store and About Us links in Onest 600, icons right. Sticky. A link's 2px rule draws in from the left on hover and stays under the current page.
+- **Theme toggle:** one icon button showing the current theme's icon (sun or moon). A press flips between light and dark; the icon turns into place. It opens no menu. `system` is where a visitor starts and can be chosen again on the account page.
 - **Wordmark:** "ADVENTURO" in Archivo 125/900, uppercase, tracking 0.02em, `--color-text`. It is one component so a real logo can replace it. In the navbar it is 24px from 640px up, 20px from 420px, and 18px below that: at 24px it is 208px wide and the bar cannot hold it beside the menu button, theme switcher, and Sign in on a phone. This is the one place Archivo goes under 24px.
-- **Navbar on phones:** the About Us link moves into the logo menu below 640px. The theme switcher is one icon button (the current theme's icon) that opens a three-item menu. Below 420px the signed-out Sign in button becomes an icon button, so search, theme and account fit beside the wordmark from 360px.
-- **Logo menu:** a panel listing the six verticals, each row a 12px square of its ink, its icon, and its name; then Shop Gear. The hovered row fills with that vertical's ink.
-- **Footer:** `--color-surface-sunken`, topped by a terrain line in route orange.
+- **Navbar on phones:** the Gear Store and About Us links move into the logo menu below 768px. Below 420px the signed-out Sign in button becomes an icon button, so search, theme and account fit beside the wordmark from 360px.
+- **Logo menu:** a panel listing the six verticals, each row a 12px square of its ink, its icon, and its name. The hovered row fills with that vertical's ink. Below 768px the navbar's links follow under a divider.
+- **Footer:** `--color-surface-sunken`, topped by a terrain line in route orange. On a vertical's page the line is that vertical's ink.
 
 ### Modal and sheet
 - Panel radius, `--color-surface-raised`, `--shadow-overlay`, on `--color-overlay`. Max width 560px; a bottom sheet under 640px.
@@ -357,9 +358,13 @@ The home page's vertical picker and its most recognisable element. Reference ske
 
 ### Motion
 - `--duration-fast` (120ms) for hover and press; `--duration-base` (200ms) for menus, chips, and fades; `--duration-slow` (420ms) for the modal, sheet, and terrain. Easing is `--ease-out`; `--ease-in-out` only for things that move and return.
-- One authored moment: on the home page's first load, the terrain bands rise into place left to right (60ms apart) and the route line draws itself across them. It runs once. Content is visible without it.
-- No scroll-triggered entrance on every section. No parallax.
-- `prefers-reduced-motion: reduce`: no movement at all. The terrain is simply there, the route line is drawn, and state changes are instant or a fade of at most `--duration-fast`.
+- **Page arrival:** every page rises 16px and fades in over `--duration-slow` when the path changes. A change of search params (filters, the booking modal) is the same page and does not replay it.
+- **Scroll reveal:** a section heading, a field band, and a grid of cards rise 24px and fade in as they come on screen, over 1.5 × `--duration-slow`. The items of a group follow one another 70ms apart (capped at the eighth). A block the page has scrolled past stays in place; one that drops back below the screen goes out of sight at once and rises in again on the way down.
+- **The terrain:** each time it comes on screen the bands rise into place left to right and the route line draws itself across them.
+- **Hover and press:** cards lift 4px and their photo grows 5%; arrows on a card or band slide 4–6px toward where they point; buttons press in to 97% (icon buttons to 90%). Menus drop in from 8px above.
+- **Parallax:** a field band's photo drifts ±6% inside its plate as the plate crosses the screen, and the vertical hero's pattern strip slides under the scroll. Both are CSS scroll-driven animations, so a browser without them shows the page still. Nothing else moves with the scroll, and text never does.
+- Motion stays flat: it moves and fades things, and never adds a shadow, blur, or glow.
+- `prefers-reduced-motion: reduce`: no movement at all. Nothing waits to be revealed, the terrain is simply there, the route line is drawn, there is no parallax, and state changes are instant or a fade of at most `--duration-fast`.
 
 ### Browser surfaces
 - Text selection: `--color-brand` background, `--color-on-brand` text.

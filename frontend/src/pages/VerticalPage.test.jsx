@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -6,6 +6,7 @@ import { routes } from '../router.jsx';
 import {
   CATEGORIES,
   GEAR,
+  mockCatalog,
   mockGear,
   mockTaxonomies,
   TIDETRAIL,
@@ -22,7 +23,8 @@ const openVertical = async ({ key = 'tidetrail', data, gear } = {}) => {
   mockTaxonomies();
   const gearRequests = mockGear(gear);
   const view = renderRoutes(routes, { path: `/v/${key}` });
-  await screen.findByRole('heading', { level: 1 });
+  // The hero is there at once; the gear section follows the vertical's own data.
+  await screen.findByRole('region', { name: 'Suggested gear' });
   return { ...view, gearRequests };
 };
 
@@ -159,7 +161,7 @@ describe('VerticalPage', () => {
     server.use(http.get(api('/gear'), () => failure(500, 'INTERNAL_ERROR')));
     renderRoutes(routes, { path: '/v/tidetrail' });
     const user = userEvent.setup();
-    await screen.findByRole('heading', { level: 1, name: 'TideTrail' });
+    await screen.findByRole('region', { name: 'Suggested gear' });
 
     const alert = await suggested().findByRole('alert');
     expect(alert).toHaveTextContent('Something went wrong on our side.');
@@ -178,6 +180,55 @@ describe('VerticalPage', () => {
       await screen.findByRole('heading', { level: 1, name: 'This trail isn’t on the map.' }),
     ).toBeInTheDocument();
     expect(document.title).toBe('Page not found · Adventuro');
+    expect(screen.getByRole('contentinfo').querySelector('[data-vertical]')).toBeNull();
+  });
+
+  it('draws the terrain line above the footer in the vertical’s ink', async () => {
+    await openVertical();
+
+    const line = screen.getByRole('contentinfo').querySelector('svg');
+    expect(line.closest('[data-vertical]')).toHaveAttribute('data-vertical', 'tidetrail');
+  });
+
+  it('shows the vertical’s field and name at once, before its data has arrived', async () => {
+    let respond;
+    server.use(
+      http.get(api('/verticals/peakpulse'), async () => {
+        await new Promise((resolve) => {
+          respond = resolve;
+        });
+        return success({ vertical: VERTICALS[2], tours: [] });
+      }),
+    );
+    mockTaxonomies();
+    mockGear();
+    renderRoutes(routes, { path: '/v/peakpulse' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'PeakPulse' })).toBeInTheDocument();
+    expect(document.title).toBe('PeakPulse · Adventuro');
+    expect(screen.getByRole('main').querySelector('[data-vertical]')).toHaveAttribute(
+      'data-vertical',
+      'peakpulse',
+    );
+    expect(expeditions().getByRole('status')).toHaveTextContent('Loading');
+    expect(hero().queryByText('PeakPulse description.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Suggested gear' })).not.toBeInTheDocument();
+
+    await waitFor(() => expect(respond).toBeDefined());
+    respond();
+    expect(await hero().findByText('PeakPulse description.')).toBeInTheDocument();
+  });
+
+  it('fills the hero from the verticals the home page already loaded', async () => {
+    mockCatalog();
+    const { router } = renderRoutes(routes, { path: '/' });
+    await screen.findAllByRole('link', { name: /PeakPulse/ });
+    server.use(http.get(api('/verticals/peakpulse'), () => new Promise(() => {})));
+
+    await act(() => router.navigate('/v/peakpulse'));
+
+    expect(await hero().findByText('Snow Peaks, Passes & Alpine Treks')).toBeInTheDocument();
+    expect(hero().getByText('PeakPulse description.')).toBeInTheDocument();
   });
 
   it('shows a loading state, then an error with a retry when the vertical fails', async () => {

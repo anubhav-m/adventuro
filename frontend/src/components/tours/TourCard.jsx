@@ -20,6 +20,7 @@ export function TourCard({ tour, verticalKey }) {
         <Photo
           image={tour.coverImage}
           alt={tour.title}
+          zoom
           className="aspect-4/3 rounded-none"
           fallback={
             <div

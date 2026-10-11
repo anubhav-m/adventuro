@@ -13,10 +13,11 @@ export function GearCard({ gear }) {
   const CategoryIcon = getCategoryIcon(category?.slug);
 
   return (
-    <Card as="article" flush className="flex h-full flex-col overflow-hidden">
+    <Card as="article" flush interactive className="flex h-full flex-col overflow-hidden">
       <Photo
         image={gear.images[0]}
         alt={gear.name}
+        zoom
         className="aspect-square rounded-none"
         fallback={
           <div

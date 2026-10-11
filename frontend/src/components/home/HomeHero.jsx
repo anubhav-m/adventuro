@@ -1,6 +1,7 @@
 import { ArrowDown } from 'lucide-react';
 import { ADVENTURES_SECTION_ID, BRAND, ROUTES } from '../../lib/constants.js';
 import { Button } from '../ui/Button.jsx';
+import { Reveal } from '../ui/Reveal.jsx';
 
 // The client's own figures. They are a plain row, not metric cards.
 const STATS = [
@@ -19,17 +20,20 @@ export function HomeHero() {
       <h1 id="hero-heading" className="type-hero">
         {BRAND.NAME}
       </h1>
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+      <Reveal
+        stagger
+        className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12"
+      >
         <div className="flex flex-col gap-8">
           <p className="type-lead">{BRAND.HERO_TAGLINE}</p>
-          <ul className="flex flex-wrap gap-x-8 gap-y-4">
+          <Reveal as="ul" stagger className="flex flex-wrap gap-x-8 gap-y-4">
             {STATS.map(({ figure, note }) => (
               <li key={figure}>
                 <span className="block text-body-lg font-extrabold">{figure}</span>
                 <span className="text-sm font-medium text-text-muted">{note}</span>
               </li>
             ))}
-          </ul>
+          </Reveal>
         </div>
         <div className="flex flex-col items-start gap-6">
           <p className="text-body-lg font-medium text-text-muted">
@@ -46,7 +50,7 @@ export function HomeHero() {
             </Button>
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

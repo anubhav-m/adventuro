@@ -22,9 +22,14 @@ const waitForHome = async (page) => {
   await expect
     .poll(() => photo.evaluate((image) => image.complete && image.naturalWidth > 0))
     .toBe(true);
-  // The terrain's one entrance (bands rising, the route drawing itself) has finished.
+  // Every timed animation has finished. The parallax ones follow the scroll and never do.
   await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.timeline === document.timeline)
+        .map((animation) => animation.finished),
+    ),
   );
   await page.evaluate(() => window.scrollTo(0, 0));
 };

@@ -74,12 +74,17 @@ export const open = async (page, path, theme) => {
 export const hasHorizontalScroll = (page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
-export const screenshot = (page, testInfo, name, options) =>
-  page.screenshot({
+// Blocks that reveal on scroll are out of sight while they are below the screen, so a
+// full-page shot is taken with reduced motion, where nothing waits to be revealed.
+export const screenshot = async (page, testInfo, name, options) => {
+  if (options?.fullPage) await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.screenshot({
     path: `e2e/screenshots/${testInfo.project.name}-${name}.png`,
     animations: 'disabled',
     ...options,
   });
+  if (options?.fullPage) await page.emulateMedia({ reducedMotion: null });
+};
 
 // Google's script needs an authorised origin and the network; a stand-in draws the button.
 export const stubGoogleSignIn = (page) =>

@@ -24,7 +24,7 @@ const setup = (path) => {
   return { ...view, user: userEvent.setup() };
 };
 
-const menuButton = () => screen.getByRole('button', { name: 'Browse verticals and gear' });
+const menuButton = () => screen.getByRole('button', { name: 'Browse verticals' });
 const item = (name) => screen.getByRole('menuitem', { name });
 
 describe('LogoMenu', () => {
@@ -38,21 +38,21 @@ describe('LogoMenu', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('opens on hover with the six verticals and Shop Gear, and closes when the pointer leaves', async () => {
+  it('opens on hover with the six verticals and the nav links, and closes when the pointer leaves', async () => {
     const { user } = setup();
     await user.hover(screen.getByRole('link', { name: 'Adventuro home' }));
-    const menu = screen.getByRole('menu', { name: 'Verticals and gear' });
+    const menu = screen.getByRole('menu', { name: 'Verticals' });
 
     expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
     expect(menuButton()).toHaveAttribute('aria-controls', menu.id);
     const names = within(menu)
       .getAllByRole('menuitem')
       .map((element) => element.textContent);
-    expect(names).toEqual([...VERTICAL_NAMES, 'Shop Gear', 'About Us']);
+    expect(names).toEqual([...VERTICAL_NAMES, 'Gear Store', 'About Us']);
     expect(item('TideTrail')).toHaveAttribute('href', '/v/tidetrail');
     expect(item('TideTrail')).toHaveAttribute('data-vertical', 'tidetrail');
     expect(item('Grand India Tour')).toHaveAttribute('href', '/v/grand-india-tour');
-    expect(item('Shop Gear')).toHaveAttribute('href', '/gear');
+    expect(item('Gear Store')).toHaveAttribute('href', '/gear');
 
     await user.unhover(screen.getByRole('link', { name: 'Adventuro home' }));
     await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());

@@ -67,8 +67,8 @@ for (const theme of THEMES) {
     }) => {
       await visit(page, theme, PUBLIC_ROUTES[0]);
 
-      await page.getByRole('button', { name: 'Browse verticals and gear' }).click();
-      await expect(page.getByRole('menu', { name: 'Verticals and gear' })).toBeVisible();
+      await page.getByRole('button', { name: 'Browse verticals' }).click();
+      await expect(page.getByRole('menu', { name: 'Verticals' })).toBeVisible();
       expect(await findA11yViolations(page)).toEqual([]);
       await page.keyboard.press('Escape');
 

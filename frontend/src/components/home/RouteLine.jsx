@@ -6,20 +6,22 @@ const ROUTE =
 
 // The dashed route through the sky above the five bands, ending in a ring. It is drawn on the
 // same sheet as the terrain (1440 × 250), so it sits on the bands' 14rem fields (`bottom-56`).
-export function RouteLine({ verticalKey, animate, className }) {
+// It is out of sight until `drawn`, then draws itself.
+export function RouteLine({ verticalKey, drawn, className }) {
   // The drawing animation is taken off once it has run: Chromium stops painting an element
   // that still carries a finished clip-path animation when the window is resized.
-  const [drawing, setDrawing] = useState(animate);
+  const [finished, setFinished] = useState(false);
 
   return (
     <svg
       data-vertical={verticalKey}
       viewBox="0 0 1440 250"
       aria-hidden="true"
-      onAnimationEnd={() => setDrawing(false)}
+      onAnimationEnd={() => setFinished(true)}
       className={cn(
         'pointer-events-none absolute inset-x-0 bottom-56 aspect-[1440/250] overflow-visible fill-none stroke-accent-text',
-        drawing && 'animate-draw-in',
+        !drawn && 'motion-safe:invisible',
+        drawn && !finished && 'animate-draw-in',
         className,
       )}
     >

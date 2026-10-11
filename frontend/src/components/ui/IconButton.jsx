@@ -1,7 +1,7 @@
 import { cn } from '../../lib/cn.js';
 
 const BASE =
-  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill border-(length:--border-ink) text-text transition-colors duration-(--duration-fast) ease-out disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex size-11 shrink-0 items-center justify-center rounded-pill border-(length:--border-ink) text-text transition-[color,background-color,border-color,scale] duration-(--duration-fast) ease-out motion-safe:active:scale-90 disabled:cursor-not-allowed disabled:opacity-45';
 
 const VARIANTS = {
   ghost: 'border-transparent not-disabled:hover:bg-surface-raised',

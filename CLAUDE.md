@@ -117,10 +117,10 @@ This section covers structure and behavior. The visual design is decided:
 - To change a token, edit `/design/theme.css`, copy it to both apps again, and update `/DESIGN.md` in the same change.
 
 ### Navbar (customer app, every page)
-1. **Adventuro logo**. Click goes home. Hover opens a menu listing the **6 verticals + Shop Gear**. The same menu must also open on keyboard focus/Enter and on tap (touch). Escape closes it.
-2. **Search** icon → search overlay with grouped results for tours and gear.
-3. **About Us**
-4. **Theme switcher**: System / Light / Dark.
+1. **Adventuro logo**. Click goes home. Hover opens a menu listing the **6 verticals**. The same menu must also open on keyboard focus/Enter and on tap (touch). Escape closes it.
+2. **Gear Store** and **About Us** links. On narrow screens they move into the logo menu.
+3. **Search** icon → search overlay with grouped results for tours and gear.
+4. **Theme toggle**: one button that flips between light and dark. A visitor starts on `system`; the account page can set System / Light / Dark.
 5. **Account**:
    - Signed in: avatar opens a menu with name, email, phone, user ID, My Bookings, Profile, Sign out.
    - Signed out: Sign in / Sign up button.

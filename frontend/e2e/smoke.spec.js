@@ -26,8 +26,8 @@ for (const theme of THEMES) {
     const problems = watchForErrors(page);
     await open(page, '/', theme);
 
-    await page.getByRole('button', { name: 'Browse verticals and gear' }).click();
-    const menu = page.getByRole('menu', { name: 'Verticals and gear' });
+    await page.getByRole('button', { name: 'Browse verticals' }).click();
+    const menu = page.getByRole('menu', { name: 'Verticals' });
     await expect(menu).toBeVisible();
     await menu.getByRole('menuitem', { name: 'PeakPulse' }).hover();
     expect(await hasHorizontalScroll(page)).toBe(false);
@@ -41,8 +41,7 @@ for (const theme of THEMES) {
 
 test('the theme choice is applied before first paint on the next visit', async ({ page }) => {
   await open(page, '/', 'light');
-  await page.getByRole('button', { name: 'Theme: System' }).click();
-  await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
   // With scripts blocked, only the inline script in index.html can have set the theme.

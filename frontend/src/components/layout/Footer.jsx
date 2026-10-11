@@ -1,4 +1,12 @@
-import { BRAND, CONTACT_EMAIL, ROUTES, SOCIAL_LINKS, VERTICALS } from '../../lib/constants.js';
+import { useMatch } from 'react-router';
+import {
+  BRAND,
+  CONTACT_EMAIL,
+  getVerticalMeta,
+  ROUTES,
+  SOCIAL_LINKS,
+  VERTICALS,
+} from '../../lib/constants.js';
 import { FooterLinks } from './FooterLinks.jsx';
 import { NewsletterForm } from './NewsletterForm.jsx';
 import { TerrainLine } from './TerrainLine.jsx';
@@ -21,10 +29,17 @@ const SUPPORT_LINKS = [
 
 const CONTACT_LINKS = [{ label: 'Email us', href: `mailto:${CONTACT_EMAIL}` }, ...SOCIAL_LINKS];
 
+// On a vertical's page the terrain line above the footer is drawn in that vertical's ink;
+// everywhere else it is route orange.
 export function Footer() {
+  const match = useMatch(ROUTES.vertical(':verticalKey'));
+  const verticalKey = getVerticalMeta(match?.params.verticalKey)?.key;
+
   return (
     <footer className="mt-(--space-section)">
-      <TerrainLine />
+      <div data-vertical={verticalKey}>
+        <TerrainLine />
+      </div>
       <div className="bg-surface-sunken">
         <div className="mx-auto grid max-w-content gap-x-8 gap-y-12 px-(--space-gutter) py-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <div className="flex flex-col items-start gap-4">

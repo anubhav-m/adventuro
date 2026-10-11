@@ -1,9 +1,11 @@
-import { Outlet, ScrollRestoration } from 'react-router';
+import { Outlet, ScrollRestoration, useLocation } from 'react-router';
 import { BookingModal } from '../booking/BookingModal.jsx';
 import { Footer } from './Footer.jsx';
 import { Navbar } from './Navbar.jsx';
 
 export function PageLayout() {
+  const { pathname } = useLocation();
+
   return (
     <div className="flex min-h-dvh flex-col">
       <a
@@ -14,7 +16,11 @@ export function PageLayout() {
       </a>
       <Navbar />
       <main id="main" tabIndex={-1} className="flex-1">
-        <Outlet />
+        {/* Keyed by the path, so each page arrives with the same rise; a change of search
+            params (filters, the booking modal) is the same page and does not replay it. */}
+        <div key={pathname} className="animate-page-in">
+          <Outlet />
+        </div>
       </main>
       <Footer />
       <BookingModal />
