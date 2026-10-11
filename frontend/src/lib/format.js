@@ -21,6 +21,13 @@ const dateOnlyFormatter = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 });
 
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
+
 // 14999 → "₹14,999"
 export const formatPrice = (amount) => priceFormatter.format(amount);
 
@@ -37,3 +44,13 @@ export const formatDate = (value) => {
 // The IST calendar date `offsetDays` from now, as 'YYYY-MM-DD' (the format of <input type="date">).
 export const getIstDateOnly = (offsetDays = 0, now = new Date()) =>
   dateOnlyFormatter.format(new Date(now.getTime() + offsetDays * DAY_MS));
+
+// A tour's reporting time: '10:30' → "10:30 AM", '18:05' → "6:05 PM".
+export const formatTime = (value) => {
+  const [hours, minutes] = String(value).split(':').map(Number);
+  const date = new Date(Date.UTC(2000, 0, 1, hours, minutes));
+  return Number.isNaN(date.getTime()) ? '' : timeFormatter.format(date);
+};
+
+// 1 → "1 day", 4 → "4 days"
+export const formatDuration = (days) => `${days} ${days === 1 ? 'day' : 'days'}`;

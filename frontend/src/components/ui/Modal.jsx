@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '../../lib/cn.js';
 import { IconButton } from './IconButton.jsx';
 
 const FOCUSABLE =
@@ -8,9 +9,30 @@ const FOCUSABLE =
 
 const getFocusable = (panel) => [...panel.querySelectorAll(FOCUSABLE)];
 
-// A dialog on desktop and a bottom sheet on phones. Traps focus while open, closes on Escape
-// or a click on the overlay, and hands focus back to whatever opened it.
-export function Modal({ open, onClose, title, footer, children }) {
+// Where the panel sits: `center` is a dialog on desktop and a bottom sheet on phones; `top` hangs
+// below the navbar at every width, for a panel that grows downward as it fills (search).
+const PLACEMENTS = {
+  center: {
+    overlay: 'items-end sm:items-center sm:p-6',
+    panel: 'rounded-t-panel sm:rounded-panel',
+  },
+  top: {
+    overlay: 'items-start p-3 pt-16 sm:p-6 sm:pt-24',
+    panel: 'rounded-panel',
+  },
+};
+
+// Traps focus while open, closes on Escape or a click on the overlay, and hands focus back to
+// whatever opened it. Focus starts on `initialFocusRef`, or on the first control in the panel.
+export function Modal({
+  open,
+  onClose,
+  title,
+  footer,
+  placement = 'center',
+  initialFocusRef,
+  children,
+}) {
   const panelRef = useRef(null);
   const titleId = useId();
 
@@ -20,12 +42,12 @@ export function Modal({ open, onClose, title, footer, children }) {
     const panel = panelRef.current;
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
-    (getFocusable(panel)[0] ?? panel).focus();
+    (initialFocusRef?.current ?? getFocusable(panel)[0] ?? panel).focus();
     return () => {
       document.body.style.overflow = overflow;
       opener?.focus?.();
     };
-  }, [open]);
+  }, [open, initialFocusRef]);
 
   if (!open) return null;
 
@@ -56,7 +78,10 @@ export function Modal({ open, onClose, title, footer, children }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-overlay sm:items-center sm:p-6"
+      className={cn(
+        'fixed inset-0 z-50 flex animate-fade-in justify-center bg-overlay',
+        PLACEMENTS[placement].overlay,
+      )}
       onMouseDown={handleOverlayMouseDown}
     >
       <div
@@ -66,7 +91,10 @@ export function Modal({ open, onClose, title, footer, children }) {
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="flex max-h-[90dvh] w-full animate-rise-in flex-col rounded-t-panel bg-surface-raised shadow-overlay sm:max-w-140 sm:rounded-panel"
+        className={cn(
+          'flex max-h-[90dvh] w-full animate-rise-in flex-col bg-surface-raised shadow-overlay sm:max-w-140',
+          PLACEMENTS[placement].panel,
+        )}
       >
         <header className="flex items-start justify-between gap-4 p-5 pb-3 sm:p-6 sm:pb-3">
           <h2 id={titleId} className="pt-2 text-h3 leading-tight font-extrabold">

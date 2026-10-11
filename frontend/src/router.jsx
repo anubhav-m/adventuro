@@ -20,6 +20,12 @@ export const routes = [
     HydrateFallback: RouteFallback,
     children: [
       { index: true, ...page(() => import('./pages/HomePage.jsx'), 'HomePage') },
+      {
+        path: ROUTES.vertical(':verticalKey'),
+        ...page(() => import('./pages/VerticalPage.jsx'), 'VerticalPage'),
+      },
+      { path: ROUTES.tour(':slug'), ...page(() => import('./pages/TourPage.jsx'), 'TourPage') },
+      { path: ROUTES.GEAR, ...page(() => import('./pages/GearStorePage.jsx'), 'GearStorePage') },
       { path: ROUTES.SIGN_IN, ...page(() => import('./pages/SignInPage.jsx'), 'SignInPage') },
       {
         Component: RequireAuth,

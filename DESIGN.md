@@ -310,13 +310,14 @@ Every interactive element has hover, focus-visible, active, and disabled states.
 ### Navigation
 - **Navbar:** `--color-bg`, no border until the page scrolls, then a 1px `--color-border` bottom edge. Wordmark left, links in Onest 600, icons right. Sticky.
 - **Wordmark:** "ADVENTURO" in Archivo 125/900, uppercase, tracking 0.02em, `--color-text`. It is one component so a real logo can replace it. In the navbar it is 24px from 640px up, 20px from 420px, and 18px below that: at 24px it is 208px wide and the bar cannot hold it beside the menu button, theme switcher, and Sign in on a phone. This is the one place Archivo goes under 24px.
-- **Navbar on phones:** the About Us link moves into the logo menu below 640px. The theme switcher is one icon button (the current theme's icon) that opens a three-item menu.
+- **Navbar on phones:** the About Us link moves into the logo menu below 640px. The theme switcher is one icon button (the current theme's icon) that opens a three-item menu. Below 420px the signed-out Sign in button becomes an icon button, so search, theme and account fit beside the wordmark from 360px.
 - **Logo menu:** a panel listing the six verticals, each row a 12px square of its ink, its icon, and its name; then Shop Gear. The hovered row fills with that vertical's ink.
 - **Footer:** `--color-surface-sunken`, topped by a terrain line in route orange.
 
 ### Modal and sheet
 - Panel radius, `--color-surface-raised`, `--shadow-overlay`, on `--color-overlay`. Max width 560px; a bottom sheet under 640px.
 - Title in Title style, a close icon button top-right. The primary action is bottom-right, or full width on phones.
+- The search overlay is the same panel hung from the top at every width, so it grows downward as results arrive.
 
 ### Tables (admin, My Bookings)
 - Header row in Label style on `--color-surface-sunken`. Rows separated by 1px `--color-border`. No zebra striping.
@@ -337,6 +338,7 @@ The home page's vertical picker and its most recognisable element. Reference ske
 
 - The whole hero is the vertical's field, full-bleed, with its pattern across the top third and a terrain line as its bottom edge.
 - Left: the name in Display, the subtitle in Caslon italic, the description in Body, all in `--color-on-accent`.
+- The tour hero (`/tours/:slug`) is the same field without the pattern strip: title, tagline, facts as outline badges, and the cover photo at 16:9.
 - Right: the vertical's hero photo as a plate with a 2px `--color-on-accent` border. If there is no photo, the pattern takes that space.
 
 ### The ticket (`/bookings/:bookingNumber`)

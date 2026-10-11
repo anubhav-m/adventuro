@@ -56,29 +56,33 @@ frontend/src/
 │   └── auth.api.js, users.api.js, verticals.api.js, tours.api.js, gear.api.js,
 │       taxonomies.api.js, bookings.api.js, search.api.js, newsletter.api.js
 ├── hooks/
-│   ├── queries/               # useMe, useVerticals, useVertical, useTours, useTour, useGearList,
+│   ├── queries/               # useMe, useVerticals, useVertical, useTour, useGearList,
 │   │                          # useTaxonomies, useMyBookings, useBooking, useSearch
 │   ├── mutations/             # useGoogleSignIn, useSignOut, useUpdateProfile, useCreateBooking, useSubscribe
 │   ├── useTheme.js            # ThemeContext + useTheme()
 │   ├── useScrolled.js         # true once the page has left the top (navbar border)
 │   ├── useDebounce.js
-│   └── useUrlFilters.js       # read/write filters to URL search params
+│   └── useUrlFilters.js       # { filters, setFilters, clearFilters } on URL search params
 ├── components/
 │   ├── ui/                    # Button, IconButton, Card, Badge, Chip, ChipGroup, Input, Select, Field,
 │   │                          # Modal, Dropdown, Stepper, Skeleton, Spinner, Pagination, Avatar,
-│   │                          # EmptyState, ErrorState, InlineError, Price, SectionHeader
+│   │                          # EmptyState, ErrorState, InlineError, Price, SectionHeader,
+│   │                          # Photo (a photo plate: flat until loaded, fallback when missing)
 │   ├── layout/                # PageLayout, Navbar, LogoMenu, AccountMenu, AccountSummary, ThemeSwitcher,
-│   │                          # SearchOverlay, Footer, FooterLinks, NewsletterForm,
-│   │                          # Wordmark, TerrainLine, RouteFallback, AppToaster
+│   │                          # SearchOverlay, SearchPanel, SearchGroup, Footer, FooterLinks,
+│   │                          # NewsletterForm, Wordmark, TerrainLine, RouteFallback, AppToaster,
+│   │                          # FieldBand (a vertical's ink field: copy left, photo plate right)
 │   ├── home/                  # HomeHero, ChooseYourAdventure, Terrain, RouteLine,
 │   │                          # GrandIndiaFeature, GrandIndiaBanner, GearCategories
 │   ├── verticals/             # VerticalCard (a band of the home terrain), terrain.js (its profiles),
 │   │                          # VerticalHero
-│   ├── tours/                 # TourCard, TourGrid, TourHero, ItineraryTimeline, SignatureActivity,
-│   │                          # InclusionList, ReportingInfo, TierSelector
+│   ├── tours/                 # TourCard, TourGrid, TourDetail (the page for a loaded tour; holds the
+│   │                          # chosen tier), TourHero, TourGallery, TourSection, SignatureActivity,
+│   │                          # ItineraryTimeline, InclusionList, ReportingInfo, TourPackages, TierSelector
 │   ├── booking/               # BookingModal, BookingForm, TravelerStepper, PriceSummary, Ticket
-│   ├── gear/                  # GearCard, GearGrid, GearFilters, SuggestedGear, AffiliateDisclosure,
-│   │                          # GearCategoryCard, categoryIcons.js (icon per category slug)
+│   ├── gear/                  # GearCard, GearGrid, GearFilters, GearSearchField, GearResults,
+│   │                          # SuggestedGear, AffiliateDisclosure, GearCategoryCard,
+│   │                          # categoryIcons.js (icon per category slug)
 │   ├── auth/                  # GoogleSignInButton, SessionBoundary, RequireAuth, RequireCompleteProfile,
 │   │                          # ProfileForm (name + phone, shared by onboarding and account)
 │   ├── ThemeProvider.jsx      # resolves the theme, sets data-theme, persists the choice
@@ -101,6 +105,7 @@ frontend/src/
 ├── lib/
 │   ├── errors.js              # getErrorMessage(err), getFieldError(err, field)
 │   ├── format.js              # formatPrice (Intl en-IN INR, 0 decimals), formatDate (IST, "15 Sep 2026"),
+│   │                          # formatTime ('10:30' → "10:30 AM"), formatDuration ("4 days"),
 │   │                          # getIstDateOnly(offsetDays) → 'YYYY-MM-DD'
 │   ├── constants.js           # ROUTES, VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME,
 │   │                          # STORAGE_KEYS, LIMITS, BRAND, contact and social links
@@ -113,7 +118,8 @@ frontend/src/
 │   ├── menu.js                # arrow / Home / End navigation shared by Dropdown and LogoMenu
 │   └── cn.js                  # joins class names
 └── test/                      # setup.js, server.js (MSW + envelope helpers), render.jsx, matchMedia.js,
-                               # fixtures.js (users, catalog), googleIdentity.js (stand-in for Google)
+                               # fixtures.js (users, catalog, mockGear, mockTaxonomies),
+                               # googleIdentity.js (stand-in for Google)
 
 frontend/e2e/                  # Playwright specs + fixtures.js; screenshots/ is gitignored
 ```
@@ -194,12 +200,18 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - **Home, Book Now:** a link to `#choose-your-adventure`; the router's scroll restoration moves to the section.
 - **Home, Grand India Tour:** the banner's chips are the newest tour's `topActivities`, and View Itinerary opens that tour, or the vertical page when it has no tour.
 - **Logo menu:** the wordmark is the home link; the chevron button beside it owns the menu. It opens on hover, keyboard focus, click, and tap. Closes on Escape, outside press, pointer leave, focus leaving, and route change. A mouse click never closes it (hovering already opened it); a tap toggles. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
-- **Navbar on phones:** below 640px the About Us link moves into the logo menu, and the wordmark steps down in size, so the bar fits from 360px wide.
+- **Navbar on phones:** below 640px the About Us link moves into the logo menu, and the wordmark steps down in size. Below 420px the signed-out Sign in button is an icon button with the same name. Together the bar fits search, theme and account from 360px wide.
 - **Static page paths** (in `ROUTES`): `/privacy-terms`, `/cancellation-refund`, `/affiliate-disclosure`.
 - **Search overlay:**
   - opens from the navbar icon and the `/` key
   - debounce 300 ms, minimum 2 chars
-  - grouped results (Tours / Gear); Enter on a gear result opens its detail context in the store
+  - grouped results (Tours / Gear); a gear result opens the store searched for it (`/gear?q=<name>`), since gear has no page of its own
+  - results are real links: Arrow Down / Up move focus between the box and the results, Enter in the box opens the first result, Escape closes
+  - it is a `Modal` with `placement="top"`, and it closes when the location changes
+- **Vertical page:** a key outside the six in `VERTICALS` renders the not-found page without a request. `data-vertical` sits on the page wrapper. The suggested gear's category chip is local state and is sent to `GET /gear` as `category`.
+- **Tour page:** a 404 or a rejected slug renders the not-found page. The package section has the id `book` (`BOOKING_SECTION_ID`); every Book link points at `/tours/:slug#book` until session 11's booking modal, and the section scrolls itself into view because the tour loads after the router has handled the hash.
+- **Gear store:** `q`, `category`, `climate`, `tag`, `sort`, `page` live in the URL; a value equal to its default is left out. A filter change returns to page 1 and keeps the scroll position; a page change scrolls to the top. Typing in the search box replaces the history entry. `q` is sent to the API only between 2 and 64 characters.
+- **`useUrlFilters`** builds each change on its own latest params, not the last render's: the router moves the URL before React renders it, and two quick changes would otherwise undo each other.
 - **Booking:**
   - the total updates live (`tier.pricePerPerson × travelers`)
   - recommended gear shows as links only
@@ -233,7 +245,7 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - Vitest + React Testing Library, with MSW mocking the API using the real envelope shape (`success()` / `failure()` in `src/test/server.js`). An unhandled request fails the test.
 - Render through `renderApp` / `renderRoutes` (`src/test/render.jsx`): they supply the query client, theme, an in-memory router and the toaster. `setSystemDark()` in `src/test/matchMedia.js` sets the OS colour scheme.
 - `src/test/server.js` starts every test signed out (`GET /auth/me` → 401); `signedInAs(user)` signs one in and `record(method, path, resolver)` captures request bodies. Vitest clears mock call history between tests, so anything that must outlive one test (the Google stand-in's callback) is a plain function.
-- **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It gives every test its own `X-Forwarded-For` (the harness rate-limits per IP) and `signInAs('customer' | 'incompleteCustomer' | 'admin')`, which injects that user's cookie from `/e2e/.auth.json`. `watchForErrors` ignores exactly one console line: the browser's own report of the 401 from `GET /auth/me` for a signed-out visitor.
+- **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It answers for the demo photos' host (`picsum.photos`) with a flat placeholder so the suite does not depend on the network, and `watchForErrors` skips requests the app cancelled itself. It gives every test its own `X-Forwarded-For` (the harness rate-limits per IP) and `signInAs('customer' | 'incompleteCustomer' | 'admin')`, which injects that user's cookie from `/e2e/.auth.json`. `watchForErrors` ignores exactly one console line: the browser's own report of the 401 from `GET /auth/me` for a signed-out visitor.
 - Specs that change harness users (`account changes` in `account.spec.js`) run on the desktop project only and need a fresh harness: stop a harness left running before `npm run e2e`.
 - **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 375px and 1440px. It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4173), or reuses them if they are already running. Screenshots go to `e2e/screenshots/` (gitignored). First run on a machine: `npx playwright install chromium`.
 - Required tests:

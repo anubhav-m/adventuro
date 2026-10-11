@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatPrice, getIstDateOnly } from './format.js';
+import { formatDate, formatDuration, formatPrice, formatTime, getIstDateOnly } from './format.js';
 
 describe('formatPrice', () => {
   it.each([
@@ -50,5 +50,26 @@ describe('getIstDateOnly', () => {
 
   it('defaults to today', () => {
     expect(getIstDateOnly()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe('formatTime', () => {
+  it('shows a 24-hour reporting time on a 12-hour clock', () => {
+    expect(formatTime('10:30')).toBe('10:30 AM');
+    expect(formatTime('18:05')).toBe('6:05 PM');
+    expect(formatTime('00:00')).toBe('12:00 AM');
+    expect(formatTime('12:00')).toBe('12:00 PM');
+  });
+
+  it('returns an empty string for anything that is not a time', () => {
+    expect(formatTime('soon')).toBe('');
+    expect(formatTime(undefined)).toBe('');
+  });
+});
+
+describe('formatDuration', () => {
+  it('counts days, with one day in the singular', () => {
+    expect(formatDuration(1)).toBe('1 day');
+    expect(formatDuration(4)).toBe('4 days');
   });
 });

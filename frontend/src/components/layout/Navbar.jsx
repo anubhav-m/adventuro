@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn.js';
 import { ROUTES } from '../../lib/constants.js';
 import { AccountMenu } from './AccountMenu.jsx';
 import { LogoMenu } from './LogoMenu.jsx';
+import { SearchOverlay } from './SearchOverlay.jsx';
 import { ThemeSwitcher } from './ThemeSwitcher.jsx';
 
 export function Navbar() {
@@ -28,6 +29,7 @@ export function Navbar() {
           About Us
         </Link>
         <span className="flex-1" />
+        <SearchOverlay />
         <ThemeSwitcher />
         <AccountMenu />
       </nav>

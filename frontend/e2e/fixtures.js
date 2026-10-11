@@ -8,12 +8,25 @@ const SESSION_COOKIE = 'adv_session';
 
 export const THEMES = ['dark', 'light'];
 
+const DEMO_PHOTO_HOST = 'https://picsum.photos';
+const SHADES = ['#6f8f8c', '#a98f6a', '#7f879c', '#8a7f72', '#6d8a76', '#9a7b84'];
+
+const demoPhoto = (url) => {
+  const shade = SHADES[[...url].reduce((sum, char) => sum + char.charCodeAt(0), 0) % SHADES.length];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="${shade}"/><path d="M0 620 320 380l220 170 240-260 420 330v180H0Z" fill="#00000033"/></svg>`;
+};
+
 export const test = base.extend({
   // The harness rate-limits per IP. A fresh address per test keeps long runs and reruns green.
   page: async ({ page }, provide) => {
     const address = `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`;
     await page.route('**/api/v1/**', (route) =>
       route.continue({ headers: { ...route.request().headers(), 'x-forwarded-for': address } }),
+    );
+    // The demo content's photos live on a placeholder host. Answering for it here keeps the
+    // suite fast and independent of the network: each photo is a flat block of its own shade.
+    await page.route(`${DEMO_PHOTO_HOST}/**`, (route) =>
+      route.fulfill({ contentType: 'image/svg+xml', body: demoPhoto(route.request().url()) }),
     );
     await provide(page);
   },
@@ -42,7 +55,11 @@ export const watchForErrors = (page) => {
     problems.push(`console: ${message.text()}`);
   });
   page.on('pageerror', (error) => problems.push(`exception: ${error.message}`));
-  page.on('requestfailed', (request) => problems.push(`request failed: ${request.url()}`));
+  // A request the app cancelled itself (a list whose filters changed mid-flight) is not a failure.
+  page.on('requestfailed', (request) => {
+    if (request.failure()?.errorText === 'net::ERR_ABORTED') return;
+    problems.push(`request failed: ${request.url()}`);
+  });
   return problems;
 };
 

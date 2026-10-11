@@ -1,4 +1,4 @@
-import { Copy, LogOut, Ticket, UserRound } from 'lucide-react';
+import { Copy, LogIn, LogOut, Ticket, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { useSignOut } from '../../hooks/mutations/useSignOut.js';
@@ -12,6 +12,7 @@ import { IconButton } from '../ui/IconButton.jsx';
 import { AccountSummary } from './AccountSummary.jsx';
 
 // The navbar's account control: Sign in for a guest, the avatar menu for a signed-in user.
+// On a narrow phone Sign in is an icon, so the bar still fits beside search and the theme.
 export function AccountMenu() {
   const me = useMe();
   const signOut = useSignOut();
@@ -22,8 +23,9 @@ export function AccountMenu() {
   if (me.isPending) return <span className="size-11" />;
   if (!user) {
     return (
-      <Button to={ROUTES.SIGN_IN} size="sm">
-        Sign in
+      <Button to={ROUTES.SIGN_IN} size="sm" className="max-[419px]:w-11 max-[419px]:px-0">
+        <LogIn size={18} strokeWidth={1.75} aria-hidden="true" className="min-[420px]:hidden" />
+        <span className="max-[419px]:sr-only">Sign in</span>
       </Button>
     );
   }

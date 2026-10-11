@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Button } from './Button.jsx';
 import { Input } from './Input.jsx';
@@ -107,5 +107,35 @@ describe('Modal', () => {
 
     await user.click(dialog.parentElement);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('starts focus on the control it is pointed at, and hangs from the top when asked', async () => {
+    function Search() {
+      const [open, setOpen] = useState(false);
+      const inputRef = useRef(null);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Search
+          </button>
+          <Modal
+            open={open}
+            onClose={() => setOpen(false)}
+            title="Search"
+            placement="top"
+            initialFocusRef={inputRef}
+          >
+            <Input ref={inputRef} aria-label="Term" />
+          </Modal>
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<Search />);
+
+    await user.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(screen.getByRole('textbox', { name: 'Term' })).toHaveFocus();
+    expect(screen.getByRole('dialog', { name: 'Search' }).parentElement).toHaveClass('items-start');
   });
 });

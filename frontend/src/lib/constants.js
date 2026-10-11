@@ -1,5 +1,8 @@
 import { Building2, Gem, Monitor, Moon, Mountain, Route, Sun, Tent, Waves } from 'lucide-react';
 
+// The id of the tour page's package section, the target of every Book link.
+export const BOOKING_SECTION_ID = 'book';
+
 export const ROUTES = Object.freeze({
   HOME: '/',
   GEAR: '/gear',
@@ -13,7 +16,9 @@ export const ROUTES = Object.freeze({
   AFFILIATE_DISCLOSURE: '/affiliate-disclosure',
   vertical: (key) => `/v/${key}`,
   tour: (slug) => `/tours/${slug}`,
+  tourBooking: (slug) => `/tours/${slug}#${BOOKING_SECTION_ID}`,
   gearCategory: (slug) => `/gear?${new URLSearchParams({ category: slug })}`,
+  gearSearch: (q) => `/gear?${new URLSearchParams({ q })}`,
 });
 
 export const GRAND_INDIA_TOUR_KEY = 'grand-india-tour';
@@ -29,6 +34,8 @@ export const VERTICALS = Object.freeze(
     { key: GRAND_INDIA_TOUR_KEY, name: 'Grand India Tour', icon: Route },
   ].map((vertical) => Object.freeze({ ...vertical, route: ROUTES.vertical(vertical.key) })),
 );
+
+export const getVerticalMeta = (key) => VERTICALS.find((vertical) => vertical.key === key);
 
 // The id of the home page's vertical picker, the target of the hero's Book Now.
 export const ADVENTURES_SECTION_ID = 'choose-your-adventure';
@@ -59,7 +66,25 @@ export const LIMITS = Object.freeze({
   TRAVELERS_MIN: 1,
   TRAVELERS_MAX: 20,
   BOOKING_MAX_DAYS_AHEAD: 365,
+  SEARCH_MIN: 2,
+  SEARCH_MAX: 64,
 });
+
+export const SEARCH_DEBOUNCE_MS = 300;
+
+export const DIFFICULTY_LABELS = Object.freeze({
+  easy: 'Easy',
+  moderate: 'Moderate',
+  challenging: 'Challenging',
+});
+
+// The first option is the API's default, so it is never written to the URL.
+export const GEAR_SORT_OPTIONS = Object.freeze([
+  Object.freeze({ value: 'newest', label: 'Newest' }),
+  Object.freeze({ value: 'price_asc', label: 'Price: low to high' }),
+  Object.freeze({ value: 'price_desc', label: 'Price: high to low' }),
+  Object.freeze({ value: 'popular', label: 'Most popular' }),
+]);
 
 export const BRAND = Object.freeze({
   NAME: 'Adventuro',
