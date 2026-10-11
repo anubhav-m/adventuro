@@ -1,4 +1,14 @@
-import { expect, hasHorizontalScroll, open, screenshot, test, watchForErrors } from './fixtures.js';
+import {
+  dateAhead,
+  expect,
+  findA11yViolations,
+  hasHorizontalScroll,
+  open,
+  screenshot,
+  stubGoogleSignIn,
+  test,
+  watchForErrors,
+} from './fixtures.js';
 
 const appliedTheme = (page) => page.locator('html');
 
@@ -29,16 +39,7 @@ test('the account menu shows the signed-in customer', async ({ page, signInAs },
 });
 
 test('a signed-out visitor to the account page is sent to sign in', async ({ page }, testInfo) => {
-  // Google's script needs an authorised origin and the network; a stand-in draws the button.
-  await page.route('https://accounts.google.com/gsi/client', (route) =>
-    route.fulfill({
-      contentType: 'text/javascript',
-      body: `window.google = { accounts: { id: {
-        initialize() {},
-        renderButton(element) { element.textContent = 'Continue with Google'; },
-      } } };`,
-    }),
-  );
+  await stubGoogleSignIn(page);
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/account');
 
@@ -54,20 +55,38 @@ test.describe('account changes', () => {
   test.describe.configure({ mode: 'serial' });
   test.skip(({ viewport }) => viewport.width < 1024, 'Changes shared harness data: desktop only');
 
-  test('an incomplete profile is sent to onboarding, and completing it reaches the account page', async ({
+  // The harness has one incomplete user and a profile is completed once, so this is the only
+  // test that may use them: the guard, onboarding, and the booking that waited for it.
+  test('an incomplete profile is sent to onboarding, and completing it finishes the booking that was waiting', async ({
     page,
     signInAs,
   }, testInfo) => {
     const problems = watchForErrors(page);
+    const startDate = dateAhead(60);
     await signInAs('incompleteCustomer');
-    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await page.goto('/account');
 
     await expect(page).toHaveURL('/onboarding?next=%2Faccount');
     await expect(page.getByRole('heading', { level: 1, name: 'One last step' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Full name' })).toHaveValue('Ira Incomplete');
     await screenshot(page, testInfo, 'dark-onboarding', { fullPage: true });
+    expect(await findA11yViolations(page)).toEqual([]);
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(await findA11yViolations(page)).toEqual([]);
 
+    await page.goto('/tours/goa-coastal-escape');
+    await page.getByRole('link', { name: 'Book this trip' }).filter({ visible: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Book this trip' });
+    await dialog.getByRole('radio', { name: /Explorer/ }).check();
+    await dialog.getByRole('button', { name: 'More travelers' }).click();
+    await dialog.getByLabel('Start date').fill(startDate);
+    await dialog.getByRole('button', { name: 'Confirm Booking' }).click();
+
+    await expect(page).toHaveURL(
+      /\/onboarding\?next=%2Ftours%2Fgoa-coastal-escape%3Fbook%3Dgoa-coastal-escape/,
+    );
     await page.getByRole('button', { name: 'Save and continue' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Enter a 10-digit Indian mobile number, without +91.',
@@ -81,7 +100,23 @@ test.describe('account changes', () => {
 
     await page.getByRole('textbox', { name: 'Mobile number' }).fill('9123456780');
     await page.getByRole('button', { name: 'Save and continue' }).click();
-    await expect(page).toHaveURL('/account');
+
+    // Back on the tour, with the booking as it was left.
+    await expect(page).toHaveURL(/\/tours\/goa-coastal-escape\?book=goa-coastal-escape/);
+    await expect(dialog.getByRole('radio', { name: /Explorer/ })).toBeChecked();
+    await expect(dialog.getByRole('group', { name: 'travelers' }).getByRole('status')).toHaveText(
+      '2',
+    );
+    await expect(dialog.getByLabel('Start date')).toHaveValue(startDate);
+    await dialog.getByRole('button', { name: 'Confirm Booking' }).click();
+
+    await expect(page).toHaveURL(/\/bookings\/ADV-TT-\d{4}-\d{6}$/);
+    const ticket = page.getByRole('article');
+    await expect(ticket).toContainText('Ira Incomplete');
+    await expect(ticket).toContainText('+91 9123456780');
+    await expect(ticket).toContainText('Explorer');
+
+    await page.goto('/account');
     await expect(page.getByRole('heading', { level: 1, name: 'Your account' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Mobile number' })).toHaveValue('9123456780');
     await screenshot(page, testInfo, 'dark-account', { fullPage: true });

@@ -1,10 +1,14 @@
 import { Building2, Gem, Monitor, Moon, Mountain, Route, Sun, Tent, Waves } from 'lucide-react';
 
-// The id of the tour page's package section, the target of every Book link.
+// The id of the tour page's package section, the target of the hero's View packages.
 export const BOOKING_SECTION_ID = 'book';
+
+// The id of the home page's vertical picker, the target of the hero's Book Now.
+export const ADVENTURES_SECTION_ID = 'choose-your-adventure';
 
 export const ROUTES = Object.freeze({
   HOME: '/',
+  ADVENTURES: `/#${ADVENTURES_SECTION_ID}`,
   GEAR: '/gear',
   ABOUT: '/about',
   SIGN_IN: '/signin',
@@ -16,9 +20,21 @@ export const ROUTES = Object.freeze({
   AFFILIATE_DISCLOSURE: '/affiliate-disclosure',
   vertical: (key) => `/v/${key}`,
   tour: (slug) => `/tours/${slug}`,
-  tourBooking: (slug) => `/tours/${slug}#${BOOKING_SECTION_ID}`,
+  booking: (bookingNumber) => `/bookings/${bookingNumber}`,
   gearCategory: (slug) => `/gear?${new URLSearchParams({ category: slug })}`,
   gearSearch: (q) => `/gear?${new URLSearchParams({ q })}`,
+});
+
+// The booking modal is opened by the URL, on whatever page the visitor is: `?book=<tour slug>`,
+// with `tier` to start on a package. Sign-in's `next` carries it, so the modal comes back.
+export const BOOKING_PARAMS = Object.freeze({ TOUR: 'book', TIER: 'tier' });
+
+// The `to` of a Book link: it keeps the current page and adds the booking params.
+export const bookingLink = (tourSlug, tierId) => ({
+  search: `?${new URLSearchParams({
+    [BOOKING_PARAMS.TOUR]: tourSlug,
+    ...(tierId && { [BOOKING_PARAMS.TIER]: tierId }),
+  })}`,
 });
 
 export const GRAND_INDIA_TOUR_KEY = 'grand-india-tour';
@@ -36,9 +52,6 @@ export const VERTICALS = Object.freeze(
 );
 
 export const getVerticalMeta = (key) => VERTICALS.find((vertical) => vertical.key === key);
-
-// The id of the home page's vertical picker, the target of the hero's Book Now.
-export const ADVENTURES_SECTION_ID = 'choose-your-adventure';
 
 export const TAXONOMY_TYPE = Object.freeze({
   CATEGORY: 'category',
@@ -86,11 +99,19 @@ export const GEAR_SORT_OPTIONS = Object.freeze([
   Object.freeze({ value: 'popular', label: 'Most popular' }),
 ]);
 
+// `tone` is a Badge tone. The word always shows beside the colour.
+export const BOOKING_STATUS = Object.freeze({
+  confirmed: Object.freeze({ label: 'Confirmed', tone: 'info' }),
+  completed: Object.freeze({ label: 'Completed', tone: 'success' }),
+  cancelled: Object.freeze({ label: 'Cancelled', tone: 'danger' }),
+});
+
 export const BRAND = Object.freeze({
   NAME: 'Adventuro',
   TAGLINE: 'From Coast to Camp, Peak to Palace.',
   HERO_TAGLINE: 'From Coast to Camp • Peak to Palace',
   LINE: 'One India. Infinite Adventures.',
+  PHILOSOPHY: 'We don’t just take you there. We make you experience it.',
   DESCRIPTION:
     'Curated trips across India, each built around the one thing its place is known for, with the gear that trip needs alongside.',
 });

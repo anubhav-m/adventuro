@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BRAND } from '../../lib/constants.js';
+import { BookingBar } from '../booking/BookingBar.jsx';
 import { SuggestedGear } from '../gear/SuggestedGear.jsx';
 import { Badge } from '../ui/Badge.jsx';
 import { InclusionList } from './InclusionList.jsx';
@@ -12,7 +13,8 @@ import { TourPackages } from './TourPackages.jsx';
 import { TourSection } from './TourSection.jsx';
 
 // The whole tour page for a loaded tour, in its vertical's colours. It holds the chosen package,
-// so the booking panel can read the same choice.
+// which both Book actions (beside the packages, and the bar on smaller screens) carry into
+// the booking modal.
 export function TourDetail({ tour }) {
   const [tierId, setTierId] = useState(tour.tiers[0].id);
 
@@ -42,6 +44,7 @@ export function TourDetail({ tour }) {
             <ReportingInfo reporting={tour.reporting} />
           </div>
           <TourPackages
+            tourSlug={tour.slug}
             tiers={tour.tiers}
             tierId={tierId}
             onTierChange={setTierId}
@@ -54,6 +57,7 @@ export function TourDetail({ tour }) {
         lead="What we would pack for it."
         scope={{ tour: tour.slug }}
       />
+      <BookingBar tourSlug={tour.slug} tier={tour.tiers.find((tier) => tier.id === tierId)} />
     </article>
   );
 }

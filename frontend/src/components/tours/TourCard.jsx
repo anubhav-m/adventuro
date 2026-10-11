@@ -1,4 +1,4 @@
-import { DIFFICULTY_LABELS, getVerticalMeta, ROUTES } from '../../lib/constants.js';
+import { bookingLink, DIFFICULTY_LABELS, getVerticalMeta, ROUTES } from '../../lib/constants.js';
 import { formatDuration } from '../../lib/format.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
@@ -61,7 +61,12 @@ export function TourCard({ tour, verticalKey }) {
             >
               Explore
             </Button>
-            <Button to={ROUTES.tourBooking(tour.slug)} size="sm" aria-label={`Book ${tour.title}`}>
+            <Button
+              to={bookingLink(tour.slug)}
+              preventScrollReset
+              size="sm"
+              aria-label={`Book ${tour.title}`}
+            >
               Book
             </Button>
           </div>

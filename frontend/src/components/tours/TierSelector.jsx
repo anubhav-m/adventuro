@@ -2,13 +2,14 @@ import { useId } from 'react';
 import { cn } from '../../lib/cn.js';
 import { Price } from '../ui/Price.jsx';
 
-// The tour's packages as one choice. `value` is the chosen tier's id.
-export function TierSelector({ tiers, value, onChange }) {
+// The tour's packages as one choice. `value` is the chosen tier's id. `hideLegend` is for a
+// selector that already sits under a heading saying the same.
+export function TierSelector({ tiers, value, onChange, hideLegend = false }) {
   const name = useId();
 
   return (
     <fieldset>
-      <legend className="sr-only">Package</legend>
+      <legend className={hideLegend ? 'sr-only' : 'mb-2 text-sm font-bold'}>Package</legend>
       <div className="flex flex-col gap-3">
         {tiers.map((tier) => {
           const selected = tier.id === value;

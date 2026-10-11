@@ -19,7 +19,7 @@ export const queryKeys = {
   },
   bookings: {
     all: ['bookings'],
-    mine: (params) => ['bookings', 'mine', params],
+    mine: (params) => ['bookings', 'mine', ...(params ? [params] : [])],
     detail: (bookingNumber) => ['bookings', 'detail', bookingNumber],
   },
   search: (q) => ['search', q],

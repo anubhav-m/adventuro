@@ -102,13 +102,22 @@ test('home → logo menu → TideTrail → the Goa card → its tour page', asyn
   expect(problems).toEqual([]);
 });
 
-test('Book on a tour card opens the tour at its packages', async ({ page }) => {
+test('Book on a tour card opens the booking for that tour, over the same page', async ({
+  page,
+}) => {
   await open(page, '/v/tidetrail', 'dark');
 
   await page.getByRole('link', { name: `Book ${GOA}` }).click();
 
-  await expect(page).toHaveURL(/\/tours\/goa-coastal-escape#book$/);
-  await expect(page.getByRole('heading', { name: 'Choose your package' })).toBeInViewport();
+  await expect(page).toHaveURL('/v/tidetrail?book=goa-coastal-escape');
+  const dialog = page.getByRole('dialog', { name: 'Book this trip' });
+  await expect(dialog.getByText(GOA)).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Confirm Booking' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL('/v/tidetrail');
+  await expect(page.getByRole('heading', { level: 1, name: 'TideTrail' })).toBeVisible();
 });
 
 test('a category chip filters the suggested gear on a vertical page', async ({ page }) => {

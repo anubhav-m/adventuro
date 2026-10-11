@@ -234,3 +234,30 @@ export const mockTaxonomies = (taxonomies = [...CATEGORIES, ...CLIMATES, ...TAGS
       return success({ taxonomies: taxonomies.filter((item) => !type || item.type === type) });
     }),
   );
+
+// A booking as every bookings endpoint returns it.
+export const BOOKING = Object.freeze({
+  id: 'booking-1',
+  bookingNumber: 'ADV-TT-2026-000123',
+  status: 'confirmed',
+  statusUpdatedAt: null,
+  travelers: 2,
+  startDate: '2026-12-20',
+  totalAmount: 37498,
+  createdAt: '2026-10-11T08:30:00.000Z',
+  snapshot: {
+    tourTitle: GOA_TOUR.title,
+    verticalName: 'TideTrail',
+    verticalCode: 'TT',
+    tierName: 'Explorer',
+    pricePerPerson: 18749,
+    durationDays: 4,
+  },
+  contact: { name: CUSTOMER.name, phone: CUSTOMER.phone, email: CUSTOMER.email },
+  tour: { id: GOA_TOUR.id, slug: GOA_TOUR.slug },
+  vertical: GOA_TOUR.vertical,
+  reporting: GOA_TOUR.reporting,
+});
+
+export const mockTour = (tour = GOA_TOUR) =>
+  server.use(http.get(api(`/tours/${tour.slug}`), () => success({ tour })));

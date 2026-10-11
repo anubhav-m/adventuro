@@ -84,7 +84,7 @@ describe('VerticalPage', () => {
     );
     expect(within(goa).getByRole('link', { name: 'Book Goa Coastal Escape' })).toHaveAttribute(
       'href',
-      '/tours/goa-coastal-escape#book',
+      '/v/tidetrail?book=goa-coastal-escape',
     );
 
     // A card holds with no photo, tagline or activities.

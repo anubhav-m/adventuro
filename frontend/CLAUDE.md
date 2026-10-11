@@ -19,7 +19,7 @@ Visual design is decided. Read `/DESIGN.md` (rules) and `/PRODUCT.md` (audience 
 - Tailwind CSS v4 (CSS-first config in `src/styles/index.css`, no `tailwind.config.js`)
 - `lucide-react` for icons, `sonner` for toasts
 - Google Identity Services, loaded directly from `https://accounts.google.com/gsi/client` and wrapped in one component. No wrapper library.
-- Dev tools: Vitest (+ `@vitest/coverage-v8`), React Testing Library (+ `user-event`, `jest-dom`), MSW, jsdom, Playwright (`@playwright/test`, Chromium), ESLint (flat config + react-hooks plugin), Prettier
+- Dev tools: Vitest (+ `@vitest/coverage-v8`), React Testing Library (+ `user-event`, `jest-dom`), MSW, jsdom, Playwright (`@playwright/test`, Chromium) with `@axe-core/playwright`, ESLint (flat config + react-hooks plugin), Prettier
 
 Install everything at its latest stable version. Don't add a UI kit or a date library: use native `<input type="date">` and `Intl`.
 
@@ -58,7 +58,8 @@ frontend/src/
 ├── hooks/
 │   ├── queries/               # useMe, useVerticals, useVertical, useTour, useGearList,
 │   │                          # useTaxonomies, useMyBookings, useBooking, useSearch
-│   ├── mutations/             # useGoogleSignIn, useSignOut, useUpdateProfile, useCreateBooking, useSubscribe
+│   ├── mutations/             # useGoogleSignIn, useSignOut, useUpdateProfile, useCreateBooking,
+│   │                          # useDownloadTicket, useSubscribe
 │   ├── useTheme.js            # ThemeContext + useTheme()
 │   ├── useScrolled.js         # true once the page has left the top (navbar border)
 │   ├── useDebounce.js
@@ -71,15 +72,20 @@ frontend/src/
 │   ├── layout/                # PageLayout, Navbar, LogoMenu, AccountMenu, AccountSummary, ThemeSwitcher,
 │   │                          # SearchOverlay, SearchPanel, SearchGroup, Footer, FooterLinks,
 │   │                          # NewsletterForm, Wordmark, TerrainLine, RouteFallback, AppToaster,
-│   │                          # FieldBand (a vertical's ink field: copy left, photo plate right)
+│   │                          # FieldBand (a vertical's ink field: copy left, photo plate right),
+│   │                          # ContentSection (one titled part of About and the policy pages)
 │   ├── home/                  # HomeHero, ChooseYourAdventure, Terrain, RouteLine,
 │   │                          # GrandIndiaFeature, GrandIndiaBanner, GearCategories
 │   ├── verticals/             # VerticalCard (a band of the home terrain), terrain.js (its profiles),
 │   │                          # VerticalHero
 │   ├── tours/                 # TourCard, TourGrid, TourDetail (the page for a loaded tour; holds the
 │   │                          # chosen tier), TourHero, TourGallery, TourSection, SignatureActivity,
-│   │                          # ItineraryTimeline, InclusionList, ReportingInfo, TourPackages, TierSelector
-│   ├── booking/               # BookingModal, BookingForm, TravelerStepper, PriceSummary, Ticket
+│   │                          # ItineraryTimeline, InclusionList, ReportingInfo, ReportingDetails (also on
+│   │                          # the ticket), TourPackages, TierSelector
+│   ├── booking/               # BookingModal (in PageLayout, opened by the URL), BookingForm, TravelerStepper,
+│   │                          # PriceSummary, RecommendedGear, BookingBar (the tour page's Book bar below
+│   │                          # desktop), Ticket, BookingList, BookingStatusBadge
+│   ├── about/                 # VerticalRoster, PromiseSteps
 │   ├── gear/                  # GearCard, GearGrid, GearFilters, GearSearchField, GearResults,
 │   │                          # SuggestedGear, AffiliateDisclosure, GearCategoryCard,
 │   │                          # categoryIcons.js (icon per category slug)
@@ -108,7 +114,12 @@ frontend/src/
 │   │                          # formatTime ('10:30' → "10:30 AM"), formatDuration ("4 days"),
 │   │                          # getIstDateOnly(offsetDays) → 'YYYY-MM-DD'
 │   ├── constants.js           # ROUTES, VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME,
-│   │                          # STORAGE_KEYS, LIMITS, BRAND, contact and social links
+│   │                          # STORAGE_KEYS, LIMITS, BRAND, BOOKING_PARAMS + bookingLink, BOOKING_STATUS,
+│   │                          # contact and social links
+│   ├── bookingDefaults.js     # what the booking form opens with (intent, linked tier, first tier); date bounds
+│   ├── staticContent.js       # the policy pages' copy: placeholders marked for client review
+│   ├── aboutContent.js        # the About page's copy
+│   ├── download.js            # saveBlob(blob, filename)
 │   ├── schemas.js             # zod form schemas (profile, booking, newsletter) + FIELD_MESSAGES
 │   ├── storage.js             # localStore / sessionStore: get, set, remove that never throw;
 │   │                          # bookingIntent: save / restore / clear (sessionStorage)
@@ -179,7 +190,7 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - Guards:
   - `RequireAuth`: `/onboarding`, `/account`, `/account/bookings`, `/bookings/:bookingNumber`
   - `RequireCompleteProfile`: wraps booking confirmation and the account pages
-- **Booking intent survives sign-in.** Before redirecting to sign-in from the booking modal, save `{ tourSlug, tierId, travelers, startDate }` to sessionStorage. Restore it and reopen the modal after sign-in or onboarding, then clear it.
+- **Booking intent survives sign-in.** Before redirecting to sign-in from the booking modal, save `{ tourSlug, tierId, travelers, startDate }` to sessionStorage. Restore it and reopen the modal after sign-in or onboarding, then clear it. The modal reopens by itself because `next` is the page's URL, which carries `?book=`; the form reads the intent once when it mounts and clears it. An intent for another tour is ignored, and anything in it that is no longer bookable falls back to the default.
 - Never read or store the auth token in JS. It's an httpOnly cookie.
 
 ## Theme
@@ -209,16 +220,23 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
   - results are real links: Arrow Down / Up move focus between the box and the results, Enter in the box opens the first result, Escape closes
   - it is a `Modal` with `placement="top"`, and it closes when the location changes
 - **Vertical page:** a key outside the six in `VERTICALS` renders the not-found page without a request. `data-vertical` sits on the page wrapper. The suggested gear's category chip is local state and is sent to `GET /gear` as `category`.
-- **Tour page:** a 404 or a rejected slug renders the not-found page. The package section has the id `book` (`BOOKING_SECTION_ID`); every Book link points at `/tours/:slug#book` until session 11's booking modal, and the section scrolls itself into view because the tour loads after the router has handled the hash.
+- **Tour page:** a 404 or a rejected slug renders the not-found page. The package section has the id `book` (`BOOKING_SECTION_ID`), the target of the hero's View packages; it scrolls itself into view because the tour loads after the router has handled the hash. **Book this trip** sits under the packages on desktop and in a bar pinned to the bottom of the screen below 1024px (`BookingBar`); both carry the chosen package into the modal.
 - **Gear store:** `q`, `category`, `climate`, `tag`, `sort`, `page` live in the URL; a value equal to its default is left out. A filter change returns to page 1 and keeps the scroll position; a page change scrolls to the top. Typing in the search box replaces the history entry. `q` is sent to the API only between 2 and 64 characters.
 - **`useUrlFilters`** builds each change on its own latest params, not the last render's: the router moves the URL before React renders it, and two quick changes would otherwise undo each other.
 - **Booking:**
+  - the modal is opened by the URL: `?book=<tour slug>`, plus `tier=<id>` to start on a package, on whatever page the visitor is. Every Book link is `bookingLink(slug, tierId)`; closing removes the two params. `BookingModal` is mounted once, in `PageLayout`, and loads the tour itself
+  - Confirm for a signed-out visitor or an incomplete profile saves the intent and goes to `/signin?next=…` or `/onboarding?next=…` with the current URL as `next`
+  - a booked trip renders `<Navigate>` to the ticket; nothing navigates from the mutation
+  - the start date is a native date input with `min` tomorrow (IST) and `max` 365 days ahead; zod checks the same window on submit
+  - `TOUR_UNAVAILABLE` and other failures show inline above Confirm; a rejected `startDate` shows on the field
   - the total updates live (`tier.pricePerPerson × travelers`)
   - recommended gear shows as links only
   - the button reads **Confirm Booking**, never "Pay"
   - the displayed total is for UX only; the server computes the real price
   - on success, go to the ticket page
-- **Ticket page:** "Download PDF" requests `/bookings/:bookingNumber/ticket` as a blob and saves it as `Adventuro-{bookingNumber}.pdf`.
+- **Ticket page:** "Download PDF" requests `/bookings/:bookingNumber/ticket` as a blob and saves it as `Adventuro-{bookingNumber}.pdf`. A 404 or a rejected booking number renders the not-found page. The booking number is the page's `h1`.
+- **My Bookings:** 10 per page, `page` in the URL. A list, not a table: stacked blocks on phones, columns under a header row from 768px. Each row opens its ticket. The empty state links to the home page's Choose Your Adventure (`ROUTES.ADVENTURES`).
+- **Static pages:** one `StaticPage` for the three policy paths; the path is the key into `STATIC_PAGES`. Every page shows `REVIEW_NOTICE` until the client approves the copy.
 - **Gear Buy:** an `<a href="/api/v1/gear/{id}/go" target="_blank" rel="noopener noreferrer sponsored">`. Show the affiliate disclosure on gear surfaces.
 - **Newsletter:** always shows the same success message ("You're on the list!", as a toast), whether the email is new or existing. Errors show inline under the field.
 - **Formatting:** prices via `formatPrice` (₹14,999), dates via `formatDate`, both from `lib/format.js` only.
@@ -247,6 +265,8 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - `src/test/server.js` starts every test signed out (`GET /auth/me` → 401); `signedInAs(user)` signs one in and `record(method, path, resolver)` captures request bodies. Vitest clears mock call history between tests, so anything that must outlive one test (the Google stand-in's callback) is a plain function.
 - **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It answers for the demo photos' host (`picsum.photos`) with a flat placeholder so the suite does not depend on the network, and `watchForErrors` skips requests the app cancelled itself. It gives every test its own `X-Forwarded-For` (the harness rate-limits per IP) and `signInAs('customer' | 'incompleteCustomer' | 'admin')`, which injects that user's cookie from `/e2e/.auth.json`. `watchForErrors` ignores exactly one console line: the browser's own report of the 401 from `GET /auth/me` for a signed-out visitor.
 - Specs that change harness users (`account changes` in `account.spec.js`) run on the desktop project only and need a fresh harness: stop a harness left running before `npm run e2e`.
+- **Accessibility:** `e2e/a11y.spec.js` runs axe (WCAG 2.1 A and AA) on every route, the booking modal, the logo menu and the search overlay, in both themes at both widths, and fails on any serious or critical violation (`findA11yViolations` in `e2e/fixtures.js`). `/onboarding` is checked inside `account.spec.js`.
+- The harness has one incomplete user, and a profile can be completed once. Only the serial test in `account.spec.js` may use `incompleteCustomer`: it covers the guard, onboarding and the booking that waited for it.
 - **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 375px and 1440px. It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4173), or reuses them if they are already running. Screenshots go to `e2e/screenshots/` (gitignored). First run on a machine: `npx playwright install chromium`.
 - Required tests:
   - `lib/errors.js`: every code, network, 5xx, field mapping
@@ -261,6 +281,6 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 
 1. `npm run lint` passes with zero warnings, and `npm test` passes.
 2. `npm run build` succeeds.
-3. `npm audit` reports 0 vulnerabilities.
+3. `npm audit` reports 0 vulnerabilities, and `npx knip` reports nothing.
 4. There are no hardcoded colors or fonts, no duplicated markup, no unused files or dependencies, and no `console.*`.
 5. Every new data view uses `QueryBoundary`. Every error shown to users comes from `lib/errors.js`.

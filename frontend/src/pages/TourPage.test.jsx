@@ -3,12 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { routes } from '../router.jsx';
-import { GEAR, GOA_TOUR, mockGear } from '../test/fixtures.js';
+import { GEAR, GOA_TOUR, mockGear, mockTour } from '../test/fixtures.js';
 import { renderRoutes } from '../test/render.jsx';
-import { api, failure, server, success } from '../test/server.js';
-
-const mockTour = (tour = GOA_TOUR) =>
-  server.use(http.get(api(`/tours/${tour.slug}`), () => success({ tour })));
+import { api, failure, server } from '../test/server.js';
 
 const openTour = async ({ tour = GOA_TOUR, hash = '' } = {}) => {
   mockTour(tour);
@@ -126,7 +123,28 @@ describe('TourPage', () => {
     expect(options[2]).toBeChecked();
   });
 
-  it('brings the packages into view when opened from a Book link', async () => {
+  it('carries the chosen package into both Book links', async () => {
+    await openTour();
+    const user = userEvent.setup();
+    const bookLinks = () =>
+      screen
+        .getAllByRole('link', { name: 'Book this trip' })
+        .map((link) => link.getAttribute('href'));
+
+    expect(bookLinks()).toEqual([
+      '/tours/goa-coastal-escape?book=goa-coastal-escape&tier=tier-1',
+      '/tours/goa-coastal-escape?book=goa-coastal-escape&tier=tier-1',
+    ]);
+
+    await user.click(region('Choose your package').getByRole('radio', { name: /Explorer/ }));
+    expect(new Set(bookLinks())).toEqual(
+      new Set(['/tours/goa-coastal-escape?book=goa-coastal-escape&tier=tier-2']),
+    );
+    // The bar under the page names the package it would book.
+    expect(screen.getByText('Explorer, per person')).toBeInTheDocument();
+  });
+
+  it('brings the packages into view when opened at #book', async () => {
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
     await openTour({ hash: '#book' });
 

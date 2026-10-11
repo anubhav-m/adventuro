@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration } from 'react-router';
+import { BookingModal } from '../booking/BookingModal.jsx';
 import { Footer } from './Footer.jsx';
 import { Navbar } from './Navbar.jsx';
 
@@ -16,6 +17,7 @@ export function PageLayout() {
         <Outlet />
       </main>
       <Footer />
+      <BookingModal />
       <ScrollRestoration />
     </div>
   );

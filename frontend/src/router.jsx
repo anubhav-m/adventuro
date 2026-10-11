@@ -13,6 +13,11 @@ const page = (load, name) => ({
   },
 });
 
+const staticPage = (path) => ({
+  path,
+  ...page(() => import('./pages/StaticPage.jsx'), 'StaticPage'),
+});
+
 // Every page is a lazy route inside the layout shell. The catch-all must stay last.
 export const routes = [
   {
@@ -26,6 +31,10 @@ export const routes = [
       },
       { path: ROUTES.tour(':slug'), ...page(() => import('./pages/TourPage.jsx'), 'TourPage') },
       { path: ROUTES.GEAR, ...page(() => import('./pages/GearStorePage.jsx'), 'GearStorePage') },
+      { path: ROUTES.ABOUT, ...page(() => import('./pages/AboutPage.jsx'), 'AboutPage') },
+      staticPage(ROUTES.PRIVACY_TERMS),
+      staticPage(ROUTES.CANCELLATION_REFUND),
+      staticPage(ROUTES.AFFILIATE_DISCLOSURE),
       { path: ROUTES.SIGN_IN, ...page(() => import('./pages/SignInPage.jsx'), 'SignInPage') },
       {
         Component: RequireAuth,
@@ -35,11 +44,19 @@ export const routes = [
             ...page(() => import('./pages/OnboardingPage.jsx'), 'OnboardingPage'),
           },
           {
+            path: ROUTES.booking(':bookingNumber'),
+            ...page(() => import('./pages/TicketPage.jsx'), 'TicketPage'),
+          },
+          {
             Component: RequireCompleteProfile,
             children: [
               {
                 path: ROUTES.ACCOUNT,
                 ...page(() => import('./pages/AccountPage.jsx'), 'AccountPage'),
+              },
+              {
+                path: ROUTES.MY_BOOKINGS,
+                ...page(() => import('./pages/MyBookingsPage.jsx'), 'MyBookingsPage'),
               },
             ],
           },

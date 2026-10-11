@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { AxeBuilder } from '@axe-core/playwright';
 import { test as base, expect } from '@playwright/test';
 
 // Written by the backend harness on start: { customer, incompleteCustomer, admin } session tokens.
@@ -79,3 +80,32 @@ export const screenshot = (page, testInfo, name, options) =>
     animations: 'disabled',
     ...options,
   });
+
+// Google's script needs an authorised origin and the network; a stand-in draws the button.
+export const stubGoogleSignIn = (page) =>
+  page.route('https://accounts.google.com/gsi/client', (route) =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: `window.google = { accounts: { id: {
+        initialize() {},
+        renderButton(element) { element.textContent = 'Continue with Google'; },
+      } } };`,
+    }),
+  );
+
+const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+const BLOCKING = ['serious', 'critical'];
+
+// The page's serious and critical WCAG 2.1 AA violations, one line each: the rule and where.
+export const findA11yViolations = async (page) => {
+  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
+  return violations
+    .filter(({ impact }) => BLOCKING.includes(impact))
+    .map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(' ')).join(' | ')}`);
+};
+
+// The IST calendar date `daysAhead` from now, as a date input takes it.
+export const dateAhead = (daysAhead) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(
+    Date.now() + daysAhead * 24 * 60 * 60 * 1000,
+  );
