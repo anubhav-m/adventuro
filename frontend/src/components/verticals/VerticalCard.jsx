@@ -37,7 +37,12 @@ export function VerticalCard({ vertical, groundKey }) {
             <span className="type-display block text-h3">{vertical.name}</span>
             <span className="mt-2 block text-sm font-bold">{vertical.subtitle}</span>
           </span>
-          <ArrowRight size={24} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
+          <ArrowRight
+            size={24}
+            strokeWidth={1.75}
+            aria-hidden="true"
+            className="shrink-0 transition-transform duration-(--duration-base) ease-out motion-safe:group-hover:translate-x-1.5"
+          />
         </span>
       </span>
     </Link>

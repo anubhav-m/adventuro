@@ -1,4 +1,4 @@
-const ITEM_SELECTOR = '[role="menuitem"], [role="menuitemradio"]';
+const ITEM_SELECTOR = '[role="menuitem"]';
 
 export const getMenuItems = (menu) => [...(menu?.querySelectorAll(ITEM_SELECTOR) ?? [])];
 

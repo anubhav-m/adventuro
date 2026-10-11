@@ -23,14 +23,15 @@ function Probe() {
       <button type="button" onClick={() => setPreference('sepia')}>
         Apply nonsense
       </button>
+      <button type="button" onClick={() => setPreference('light')}>
+        Choose light
+      </button>
     </>
   );
 }
 
-const choose = async (user, current, next) => {
-  await user.click(screen.getByRole('button', { name: `Theme: ${current}` }));
-  await user.click(screen.getByRole('menuitemradio', { name: next }));
-};
+const switchTo = (user, next) =>
+  user.click(screen.getByRole('button', { name: `Switch to ${next} theme` }));
 
 describe('ThemeProvider', () => {
   it('defaults to system and resolves it from the OS setting', () => {
@@ -84,41 +85,44 @@ describe('ThemeProvider', () => {
       { onThemeChange },
     );
 
-    await choose(user, 'System', 'Dark');
+    await switchTo(user, 'dark');
     expect(appliedTheme()).toBe('dark');
     expect(storedTheme()).toBe('dark');
     expect(screen.getByText('dark/dark')).toBeInTheDocument();
     expect(onThemeChange).toHaveBeenLastCalledWith('dark', 'system');
 
-    await choose(user, 'Dark', 'Light');
+    await switchTo(user, 'light');
     expect(appliedTheme()).toBe('light');
     expect(storedTheme()).toBe('light');
     expect(onThemeChange).toHaveBeenLastCalledWith('light', 'dark');
-
-    await choose(user, 'Light', 'System');
-    expect(storedTheme()).toBe('system');
-    expect(appliedTheme()).toBe('light');
-    expect(onThemeChange).toHaveBeenCalledTimes(3);
+    expect(onThemeChange).toHaveBeenCalledTimes(2);
   });
 
-  it('marks the current choice in the switcher', async () => {
+  it('toggles away from what the device is showing while still on system', async () => {
     const user = userEvent.setup();
-    window.localStorage.setItem(STORAGE_KEYS.THEME, 'dark');
-    renderApp(<ThemeSwitcher />);
+    setSystemDark(true);
+    renderApp(
+      <>
+        <ThemeSwitcher />
+        <Probe />
+      </>,
+    );
+    expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Theme: Dark' }));
-    expect(screen.getByRole('menu', { name: 'Theme' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toBeChecked();
-    expect(screen.getByRole('menuitemradio', { name: 'System' })).not.toBeChecked();
-    expect(screen.getByRole('menuitemradio', { name: 'Light' })).not.toBeChecked();
+    await switchTo(user, 'light');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByText('light/light')).toBeInTheDocument();
+    expect(storedTheme()).toBe('light');
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
   });
 
   it('does not report choosing the theme that is already set', async () => {
     const user = userEvent.setup();
     const onThemeChange = vi.fn();
-    renderApp(<ThemeSwitcher />, { onThemeChange });
+    window.localStorage.setItem(STORAGE_KEYS.THEME, 'light');
+    renderApp(<Probe />, { onThemeChange });
 
-    await choose(user, 'System', 'System');
+    await user.click(screen.getByRole('button', { name: 'Choose light' }));
     expect(onThemeChange).not.toHaveBeenCalled();
   });
 

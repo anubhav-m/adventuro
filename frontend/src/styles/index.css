@@ -139,9 +139,59 @@
 
   button:not(:disabled),
   select:not(:disabled),
-  [role='menuitem'],
-  [role='menuitemradio'] {
+  [role='menuitem'] {
     cursor: pointer;
+  }
+}
+
+/* Scroll reveal (`useReveal`): a block rises into place as it enters the screen, and the
+   children of a `stagger` block follow one another. It drops back out of sight at once when it
+   falls below the screen, ready to rise again. Without motion it is simply there. */
+@layer components {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal='rise'],
+    [data-reveal='stagger'] > * {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+
+    [data-reveal='rise'][data-revealed],
+    [data-reveal='stagger'][data-revealed] > * {
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity calc(var(--duration-slow) * 1.5) var(--ease-out),
+        transform calc(var(--duration-slow) * 1.5) var(--ease-out);
+      transition-delay: calc(var(--reveal-index, 0) * 70ms);
+    }
+
+    [data-reveal='stagger'] > :nth-child(2) {
+      --reveal-index: 1;
+    }
+
+    [data-reveal='stagger'] > :nth-child(3) {
+      --reveal-index: 2;
+    }
+
+    [data-reveal='stagger'] > :nth-child(4) {
+      --reveal-index: 3;
+    }
+
+    [data-reveal='stagger'] > :nth-child(5) {
+      --reveal-index: 4;
+    }
+
+    [data-reveal='stagger'] > :nth-child(6) {
+      --reveal-index: 5;
+    }
+
+    [data-reveal='stagger'] > :nth-child(7) {
+      --reveal-index: 6;
+    }
+
+    [data-reveal='stagger'] > :nth-child(n + 8) {
+      --reveal-index: 7;
+    }
   }
 }
 
@@ -164,6 +214,75 @@
 
 @utility animate-rise-in {
   animation: rise-in var(--duration-slow) var(--ease-out) both;
+}
+
+/* A page arriving after a route change. It stops applying once it has run, so the page is not
+   left inside a transformed box. */
+@utility animate-page-in {
+  animation: rise-in var(--duration-slow) var(--ease-out) backwards;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.97);
+  }
+}
+
+@utility animate-menu-in {
+  transform-origin: top;
+  animation: menu-in var(--duration-base) var(--ease-out) both;
+}
+
+/* The theme toggle's icon turning into place. */
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: -90deg;
+    scale: 0.5;
+  }
+}
+
+@utility animate-turn-in {
+  animation: turn-in var(--duration-slow) var(--ease-out) backwards;
+}
+
+/* Parallax, tied to the scroll position where the browser can do that without script. A photo
+   drifts inside its plate as the plate crosses the screen. */
+@keyframes photo-drift {
+  from {
+    transform: translateY(-6%) scale(1.14);
+  }
+
+  to {
+    transform: translateY(6%) scale(1.14);
+  }
+}
+
+@utility parallax-photo {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: photo-drift linear both;
+      animation-timeline: view();
+    }
+  }
+}
+
+/* A pattern strip at the top of a page slides under the scroll. */
+@keyframes pattern-drift {
+  to {
+    background-position-y: 4rem;
+  }
+}
+
+@utility parallax-pattern {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      animation: pattern-drift linear both;
+      animation-timeline: scroll();
+      animation-range: 0 100vh;
+    }
+  }
 }
 
 /* The home page's route line draws itself from left to right. */

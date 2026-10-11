@@ -71,7 +71,7 @@ test('home → logo menu → TideTrail → the Goa card → its tour page', asyn
   const problems = watchForErrors(page);
   await open(page, '/', 'dark');
 
-  await page.getByRole('button', { name: 'Browse verticals and gear' }).click();
+  await page.getByRole('button', { name: 'Browse verticals' }).click();
   await page.getByRole('menuitem', { name: 'TideTrail' }).click();
   await expect(page).toHaveURL(/\/v\/tidetrail$/);
   await expect(page.getByRole('heading', { level: 1, name: 'TideTrail' })).toBeVisible();

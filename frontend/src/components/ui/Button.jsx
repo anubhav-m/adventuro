@@ -3,7 +3,7 @@ import { cn } from '../../lib/cn.js';
 import { Spinner } from './Spinner.jsx';
 
 const BASE =
-  'inline-flex shrink-0 items-center justify-center gap-2.5 rounded-pill border-(length:--border-ink) font-extrabold whitespace-nowrap transition-colors duration-(--duration-fast) ease-out disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex shrink-0 items-center justify-center gap-2.5 rounded-pill border-(length:--border-ink) font-extrabold whitespace-nowrap transition-[color,background-color,border-color,scale] duration-(--duration-fast) ease-out motion-safe:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45';
 
 const VARIANTS = {
   primary:

@@ -33,9 +33,10 @@ describe('app shell', () => {
 
     const navbar = within(screen.getByRole('navigation', { name: 'Main' }));
     expect(navbar.getByRole('link', { name: 'Adventuro home' })).toBeInTheDocument();
-    expect(navbar.getByRole('button', { name: 'Browse verticals and gear' })).toBeInTheDocument();
+    expect(navbar.getByRole('button', { name: 'Browse verticals' })).toBeInTheDocument();
+    expect(navbar.getByRole('link', { name: 'Gear Store' })).toHaveAttribute('href', '/gear');
     expect(navbar.getByRole('link', { name: 'About Us' })).toHaveAttribute('href', '/about');
-    expect(navbar.getByRole('button', { name: 'Theme: System' })).toBeInTheDocument();
+    expect(navbar.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
     expect(await navbar.findByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin');
   });
 

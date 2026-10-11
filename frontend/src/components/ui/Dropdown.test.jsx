@@ -119,18 +119,4 @@ describe('Dropdown', () => {
     await user.click(trigger());
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
-
-  it('becomes a single-choice menu when items carry `selected`, starting on the chosen one', async () => {
-    const { user } = setup([
-      { key: 'system', label: 'System', selected: false },
-      { key: 'light', label: 'Light', selected: false },
-      { key: 'dark', label: 'Dark', selected: true },
-    ]);
-    await user.click(trigger());
-
-    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toBeChecked();
-    expect(screen.getByRole('menuitemradio', { name: 'Light' })).not.toBeChecked();
-    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toHaveFocus();
-  });
 });

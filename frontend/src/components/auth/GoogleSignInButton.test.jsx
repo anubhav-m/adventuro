@@ -44,8 +44,7 @@ describe('GoogleSignInButton', () => {
       shape: 'pill',
     });
 
-    await user.click(screen.getByRole('button', { name: 'Theme: System' }));
-    await user.click(screen.getByRole('menuitemradio', { name: 'Dark' }));
+    await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }));
     await waitFor(() => expect(identity.renderButton).toHaveBeenCalledTimes(2));
     expect(identity.renderButton.mock.calls[1][1]).toMatchObject({ theme: 'filled_black' });
   });

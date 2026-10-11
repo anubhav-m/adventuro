@@ -1,8 +1,8 @@
-import { ChevronDown, Info, ShoppingBag } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { cn } from '../../lib/cn.js';
-import { ROUTES, VERTICALS } from '../../lib/constants.js';
+import { NAV_LINKS, ROUTES, VERTICALS } from '../../lib/constants.js';
 import { getMenuItems, handleMenuKeyDown } from '../../lib/menu.js';
 import { Wordmark } from './Wordmark.jsx';
 
@@ -20,8 +20,8 @@ const INK_SQUARE =
 
 const isMouse = (event) => event.pointerType === 'mouse';
 
-// The wordmark links home. Beside it, a menu of the six verticals and the gear store that opens
-// on hover, keyboard focus, click and tap, and closes on Escape, outside press and route change.
+// The wordmark links home. Beside it, a menu of the six verticals that opens on hover, keyboard
+// focus, click and tap, and closes on Escape, outside press and route change.
 export function LogoMenu() {
   const location = useLocation();
   // The menu is open only for the location it was opened on, so any navigation closes it.
@@ -129,7 +129,7 @@ export function LogoMenu() {
       <button
         ref={buttonRef}
         type="button"
-        aria-label="Browse verticals and gear"
+        aria-label="Browse verticals"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -156,9 +156,9 @@ export function LogoMenu() {
           ref={menuRef}
           id={menuId}
           role="menu"
-          aria-label="Verticals and gear"
+          aria-label="Verticals"
           onKeyDown={handleMenuKeys}
-          className="absolute top-full left-0 z-40 w-72 animate-fade-in rounded-panel border border-border bg-surface-raised p-2 shadow-raised"
+          className="absolute top-full left-0 z-40 w-72 animate-menu-inrounded-panel border border-border bg-surface-raised p-2 shadow-raised"
         >
           {VERTICALS.map(({ key, name, icon: Icon, route }) => (
             <li key={key} role="none">
@@ -169,19 +169,19 @@ export function LogoMenu() {
               </Link>
             </li>
           ))}
-          <li role="none" className="mt-2 border-t border-border pt-2">
-            <Link to={ROUTES.GEAR} className={PLAIN_ROW} {...itemProps}>
-              <ShoppingBag size={18} strokeWidth={1.75} aria-hidden="true" />
-              Shop Gear
-            </Link>
-          </li>
-          {/* The navbar has no room for this link on a phone, so it lives here below 640px. */}
-          <li role="none" className="sm:hidden">
-            <Link to={ROUTES.ABOUT} className={PLAIN_ROW} {...itemProps}>
-              <Info size={18} strokeWidth={1.75} aria-hidden="true" />
-              About Us
-            </Link>
-          </li>
+          {/* The navbar has no room for its links below 768px, so they live here. */}
+          {NAV_LINKS.map(({ label, to, icon: Icon }, index) => (
+            <li
+              key={to}
+              role="none"
+              className={cn('md:hidden', index === 0 && 'mt-2 border-t border-border pt-2')}
+            >
+              <Link to={to} className={PLAIN_ROW} {...itemProps}>
+                <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                {label}
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </div>

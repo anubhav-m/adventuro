@@ -1,4 +1,16 @@
-import { Building2, Gem, Monitor, Moon, Mountain, Route, Sun, Tent, Waves } from 'lucide-react';
+import {
+  Building2,
+  Gem,
+  Info,
+  Monitor,
+  Moon,
+  Mountain,
+  Route,
+  ShoppingBag,
+  Sun,
+  Tent,
+  Waves,
+} from 'lucide-react';
 
 // The id of the tour page's package section, the target of the hero's View packages.
 export const BOOKING_SECTION_ID = 'book';
@@ -36,6 +48,12 @@ export const bookingLink = (tourSlug, tierId) => ({
     ...(tierId && { [BOOKING_PARAMS.TIER]: tierId }),
   })}`,
 });
+
+// The navbar's links. Below 768px the bar has no room for them, so the logo menu lists them.
+export const NAV_LINKS = Object.freeze([
+  Object.freeze({ label: 'Gear Store', to: ROUTES.GEAR, icon: ShoppingBag }),
+  Object.freeze({ label: 'About Us', to: ROUTES.ABOUT, icon: Info }),
+]);
 
 export const GRAND_INDIA_TOUR_KEY = 'grand-india-tour';
 

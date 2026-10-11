@@ -5,6 +5,7 @@ import { GearCategoryCard } from '../gear/GearCategoryCard.jsx';
 import { QueryBoundary } from '../QueryBoundary.jsx';
 import { Button } from '../ui/Button.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
+import { Reveal } from '../ui/Reveal.jsx';
 import { SectionHeader } from '../ui/SectionHeader.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 
@@ -44,13 +45,13 @@ export function GearCategories() {
           empty={<EmptyState title="Gear categories are on their way." />}
         >
           {(list) => (
-            <ul className={GRID}>
+            <Reveal as="ul" stagger className={GRID}>
               {list.map((category) => (
                 <li key={category.id}>
                   <GearCategoryCard category={category} />
                 </li>
               ))}
-            </ul>
+            </Reveal>
           )}
         </QueryBoundary>
       </div>

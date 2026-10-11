@@ -1,27 +1,23 @@
 import { useTheme } from '../../hooks/useTheme.js';
-import { THEME_OPTIONS } from '../../lib/constants.js';
-import { Dropdown } from '../ui/Dropdown.jsx';
+import { THEME, THEME_OPTIONS } from '../../lib/constants.js';
 import { IconButton } from '../ui/IconButton.jsx';
 
+// One button that flips between light and dark. It starts from whatever is showing, so a
+// visitor still on `system` leaves it with the first press; the account page can go back.
 export function ThemeSwitcher() {
-  const { preference, setPreference } = useTheme();
-  const current = THEME_OPTIONS.find((option) => option.value === preference);
-
-  const items = THEME_OPTIONS.map(({ value, label, icon }) => ({
-    key: value,
-    label,
-    icon,
-    selected: value === preference,
-    onSelect: () => setPreference(value),
-  }));
+  const { resolved, setPreference } = useTheme();
+  const next = resolved === THEME.DARK ? THEME.LIGHT : THEME.DARK;
+  const { icon: Icon } = THEME_OPTIONS.find((option) => option.value === resolved);
 
   return (
-    <Dropdown
-      label="Theme"
-      items={items}
-      trigger={(triggerProps) => (
-        <IconButton icon={current.icon} label={`Theme: ${current.label}`} {...triggerProps} />
-      )}
-    />
+    <IconButton label={`Switch to ${next} theme`} onClick={() => setPreference(next)}>
+      <Icon
+        key={resolved}
+        size={20}
+        strokeWidth={1.75}
+        aria-hidden="true"
+        className="animate-turn-in"
+      />
+    </IconButton>
   );
 }

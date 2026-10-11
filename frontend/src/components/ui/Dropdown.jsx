@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { cn } from '../../lib/cn.js';
@@ -10,24 +9,19 @@ const ITEM =
 const OPEN_KEYS = ['ArrowDown', 'ArrowUp'];
 
 // A menu button. `trigger` is a render prop that receives the props of the button:
-// <Dropdown label="Theme" items={items} trigger={(props) => <IconButton {...props} />} />
-// Items are { key, label, icon?, onSelect?, to?, selected? }. Giving any item a `selected`
-// boolean makes the menu a single-choice list (radio items). `header` is plain content shown
-// above the items.
+// <Dropdown label="Account" items={items} trigger={(props) => <IconButton {...props} />} />
+// Items are { key, label, icon?, onSelect?, to? }. `header` is plain content shown above the
+// items.
 export function Dropdown({ label, items, trigger, header, align = 'end' }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
   const menuId = useId();
-  const isChoice = items.some((item) => item.selected !== undefined);
 
   useEffect(() => {
     if (!open) return undefined;
-    const menuItems = getMenuItems(menuRef.current);
-    (
-      menuItems.find((item) => item.getAttribute('aria-checked') === 'true') ?? menuItems[0]
-    )?.focus();
+    getMenuItems(menuRef.current)[0]?.focus();
 
     const closeOnOutsidePress = (event) => {
       if (!rootRef.current.contains(event.target)) setOpen(false);
@@ -76,7 +70,7 @@ export function Dropdown({ label, items, trigger, header, align = 'end' }) {
       {open && (
         <div
           className={cn(
-            'absolute top-full z-40 mt-2 min-w-48 animate-fade-in rounded-panel border border-border bg-surface-raised p-2 shadow-raised',
+            'absolute top-full z-40 mt-2 min-w-48 animate-menu-inrounded-panel border border-border bg-surface-raised p-2 shadow-raised',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
@@ -85,8 +79,7 @@ export function Dropdown({ label, items, trigger, header, align = 'end' }) {
             {items.map((item) => {
               const Icon = item.icon;
               const itemProps = {
-                role: isChoice ? 'menuitemradio' : 'menuitem',
-                'aria-checked': isChoice ? Boolean(item.selected) : undefined,
+                role: 'menuitem',
                 tabIndex: -1,
                 className: ITEM,
                 onClick: () => selectItem(item),
@@ -95,7 +88,6 @@ export function Dropdown({ label, items, trigger, header, align = 'end' }) {
                 <>
                   {Icon && <Icon size={18} strokeWidth={1.75} aria-hidden="true" />}
                   <span className="flex-1">{item.label}</span>
-                  {item.selected && <Check size={18} strokeWidth={1.75} aria-hidden="true" />}
                 </>
               );
               return (

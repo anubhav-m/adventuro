@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn.js';
+import { Reveal } from '../ui/Reveal.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { GearCard } from './GearCard.jsx';
 
@@ -18,7 +19,9 @@ export function GearGrid({ gear, loading, stale = false }) {
   }
 
   return (
-    <ul
+    <Reveal
+      as="ul"
+      stagger
       aria-busy={stale || undefined}
       className={cn(
         GRID,
@@ -31,6 +34,6 @@ export function GearGrid({ gear, loading, stale = false }) {
           <GearCard gear={item} />
         </li>
       ))}
-    </ul>
+    </Reveal>
   );
 }

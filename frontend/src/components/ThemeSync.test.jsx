@@ -25,10 +25,8 @@ const setup = () => {
 
 const sessionLoaded = () => screen.findByRole('button', { name: 'Account' });
 
-const choose = async (user, current, next) => {
-  await user.click(screen.getByRole('button', { name: `Theme: ${current}` }));
-  await user.click(screen.getByRole('menuitemradio', { name: next }));
-};
+const switchTo = (user, next) =>
+  user.click(screen.getByRole('button', { name: `Switch to ${next} theme` }));
 
 const savesTo = (themePreference) => (body) =>
   success({ user: { ...CUSTOMER, themePreference, ...body } });
@@ -39,7 +37,7 @@ describe('theme persistence', () => {
     const user = setup();
     await screen.findByRole('link', { name: 'Sign in' });
 
-    await choose(user, 'System', 'Dark');
+    await switchTo(user, 'dark');
 
     expect(appliedTheme()).toBe('dark');
     expect(storedTheme()).toBe('dark');
@@ -52,12 +50,14 @@ describe('theme persistence', () => {
     const user = setup();
     await sessionLoaded();
 
-    await choose(user, 'System', 'Dark');
+    await switchTo(user, 'dark');
 
     expect(appliedTheme()).toBe('dark');
     await waitFor(() => expect(received).toEqual([{ themePreference: 'dark' }]));
     expect(storedTheme()).toBe('dark');
-    expect(await screen.findByRole('button', { name: 'Theme: Dark' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Switch to light theme' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -73,7 +73,7 @@ describe('theme persistence', () => {
     const user = setup();
     await sessionLoaded();
 
-    await choose(user, 'System', 'Dark');
+    await switchTo(user, 'dark');
     await waitFor(() => expect(fail).toBeDefined());
     expect(appliedTheme()).toBe('dark');
     expect(storedTheme()).toBe('dark');
@@ -84,7 +84,7 @@ describe('theme persistence', () => {
     ).toBeInTheDocument();
     await waitFor(() => expect(appliedTheme()).toBe('light'));
     expect(storedTheme()).toBe('system');
-    expect(screen.getByRole('button', { name: 'Theme: System' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
   });
 
   it('applies the server’s value on sign-in, over the local choice, without saving it back', async () => {
@@ -98,7 +98,7 @@ describe('theme persistence', () => {
 
     await waitFor(() => expect(appliedTheme()).toBe('dark'));
     expect(storedTheme()).toBe('dark');
-    expect(screen.getByRole('button', { name: 'Theme: Dark' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Switch to light theme' })).toBeInTheDocument();
     expect(received).toEqual([]);
   });
 
@@ -120,8 +120,8 @@ describe('theme persistence', () => {
     const user = setup();
     await sessionLoaded();
 
-    await choose(user, 'System', 'Dark');
-    await choose(user, 'Dark', 'Light');
+    await switchTo(user, 'dark');
+    await switchTo(user, 'light');
 
     await waitFor(() =>
       expect(received).toEqual([{ themePreference: 'dark' }, { themePreference: 'light' }]),

@@ -62,13 +62,15 @@ frontend/src/
 │   │                          # useDownloadTicket, useSubscribe
 │   ├── useTheme.js            # ThemeContext + useTheme()
 │   ├── useScrolled.js         # true once the page has left the top (navbar border)
+│   ├── useReveal.js           # [ref, revealed]: true while the element is on screen or above it (IntersectionObserver)
 │   ├── useDebounce.js
 │   └── useUrlFilters.js       # { filters, setFilters, clearFilters } on URL search params
 ├── components/
 │   ├── ui/                    # Button, IconButton, Card, Badge, Chip, ChipGroup, Input, Select, Field,
 │   │                          # Modal, Dropdown, Stepper, Skeleton, Spinner, Pagination, Avatar,
 │   │                          # EmptyState, ErrorState, InlineError, Price, SectionHeader,
-│   │                          # Photo (a photo plate: flat until loaded, fallback when missing)
+│   │                          # Photo (a photo plate: flat until loaded, fallback when missing; `zoom`, `parallax`),
+│   │                          # Reveal (rises in on scroll; `stagger` for a group's children)
 │   ├── layout/                # PageLayout, Navbar, LogoMenu, AccountMenu, AccountSummary, ThemeSwitcher,
 │   │                          # SearchOverlay, SearchPanel, SearchGroup, Footer, FooterLinks,
 │   │                          # NewsletterForm, Wordmark, TerrainLine, RouteFallback, AppToaster,
@@ -113,7 +115,7 @@ frontend/src/
 │   ├── format.js              # formatPrice (Intl en-IN INR, 0 decimals), formatDate (IST, "15 Sep 2026"),
 │   │                          # formatTime ('10:30' → "10:30 AM"), formatDuration ("4 days"),
 │   │                          # getIstDateOnly(offsetDays) → 'YYYY-MM-DD'
-│   ├── constants.js           # ROUTES, VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME,
+│   ├── constants.js           # ROUTES, NAV_LINKS, VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME,
 │   │                          # STORAGE_KEYS, LIMITS, BRAND, BOOKING_PARAMS + bookingLink, BOOKING_STATUS,
 │   │                          # contact and social links
 │   ├── bookingDefaults.js     # what the booking form opens with (intent, linked tier, first tier); date bounds
@@ -203,6 +205,7 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
   - **On sign-in:** the server value wins.
 - Always mirror the **preference** to localStorage under `adventuro.theme` (`STORAGE_KEYS.THEME`), for guests and signed-in users alike. A tiny inline script in `index.html` reads it, resolves `system` with `matchMedia`, and sets `data-theme` before first paint so there's no flash. The key is written in both places; change them together.
 - `ThemeSync` (inside `SessionThemeProvider`) holds one rule: for a signed-in user, whenever no save is in flight the server's value is applied. That applies it on sign-in and rolls back a failed save; the failure also shows a toast.
+- The navbar's `ThemeSwitcher` is one toggle button, not a menu: it sets the opposite of the theme that is showing (`resolved`), so the first press leaves `system`. Its name is "Switch to light theme" / "Switch to dark theme". The account page's chips are the only place `system` can be chosen again.
 - `ThemeProvider` takes `onChange(next, previous)`, called when the user picks a theme: this is where the signed-in `PATCH` goes. `setPreference(value, { notify: false })` applies a value without calling it, for applying the server value on sign-in and for rolling back a failed save.
 
 ## Behavior requirements from the UI flow
@@ -210,8 +213,9 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - **Home, Choose Your Adventure:** the terrain section from `/DESIGN.md`, not a carousel. Five bands side by side from 1280px; below that, full-width stacked rows with Grand India Tour as a route-orange row on top. Each band is one link, in coast-to-peak order (`TERRAIN_ORDER`), with its name and subtitle from `GET /verticals`. Nothing scrolls sideways, so there are no prev/next controls.
 - **Home, Book Now:** a link to `#choose-your-adventure`; the router's scroll restoration moves to the section.
 - **Home, Grand India Tour:** the banner's chips are the newest tour's `topActivities`, and View Itinerary opens that tour, or the vertical page when it has no tour.
-- **Logo menu:** the wordmark is the home link; the chevron button beside it owns the menu. It opens on hover, keyboard focus, click, and tap. Closes on Escape, outside press, pointer leave, focus leaving, and route change. A mouse click never closes it (hovering already opened it); a tap toggles. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
-- **Navbar on phones:** below 640px the About Us link moves into the logo menu, and the wordmark steps down in size. Below 420px the signed-out Sign in button is an icon button with the same name. Together the bar fits search, theme and account from 360px wide.
+- **Logo menu:** the wordmark is the home link; the chevron button beside it owns the menu. It lists the six verticals, and below 768px the navbar's links (`NAV_LINKS`) after them. It opens on hover, keyboard focus, click, and tap. Closes on Escape, outside press, pointer leave, focus leaving, and route change. A mouse click never closes it (hovering already opened it); a tap toggles. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
+- **Navbar links:** Gear Store and About Us (`NAV_LINKS`), as `NavLink`s so the current page keeps its underline. They need 768px beside the wordmark and Sign in, so below that they are in the logo menu.
+- **Navbar on phones:** below 640px the wordmark steps down in size. Below 420px the signed-out Sign in button is an icon button with the same name. Together the bar fits search, theme and account from 360px wide.
 - **Static page paths** (in `ROUTES`): `/privacy-terms`, `/cancellation-refund`, `/affiliate-disclosure`.
 - **Search overlay:**
   - opens from the navbar icon and the `/` key
@@ -219,7 +223,13 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
   - grouped results (Tours / Gear); a gear result opens the store searched for it (`/gear?q=<name>`), since gear has no page of its own
   - results are real links: Arrow Down / Up move focus between the box and the results, Enter in the box opens the first result, Escape closes
   - it is a `Modal` with `placement="top"`, and it closes when the location changes
-- **Vertical page:** a key outside the six in `VERTICALS` renders the not-found page without a request. `data-vertical` sits on the page wrapper. The suggested gear's category chip is local state and is sent to `GET /gear` as `category`.
+- **Footer:** on `/v/:verticalKey` (a known key) the terrain line above it sits in `data-vertical`, so it is that vertical's ink; elsewhere it is route orange.
+- **Motion** (rules in `/DESIGN.md`; the CSS is in `styles/index.css`):
+  - page arrival: `PageLayout` keys the outlet's wrapper by `pathname` with `animate-page-in`, so a path change remounts the page and a search-param change does not
+  - scroll reveal: wrap a block in `Reveal`, or a group in `<Reveal stagger>` (its direct children rise in turn). A block replays each time the page scrolls back down to it; one already scrolled past stays put. `SectionHeader`, `FieldBand`, `TourGrid`, `GearGrid` and the home terrain already do. The hidden state is CSS on `data-reveal` without `data-revealed`, and only under `prefers-reduced-motion: no-preference`
+  - do not put `Reveal` on an element that has its own `transition-*` utility; wrap it instead
+  - parallax (`parallax-photo`, `parallax-pattern`) is CSS scroll-driven animation behind `@supports`; no scroll listeners
+- **Vertical page:** a key outside the six in `VERTICALS` renders the not-found page without a request. The hero never waits for data: it renders at once as the vertical's field with the name from `VERTICALS`, takes the subtitle, description and photo from the cached `GET /verticals` list when the home page has loaded it (`useVerticals({ enabled: false })`, which never fetches), and then from the vertical's own response. Only the tour grid shows a skeleton, and the suggested gear follows once the vertical has loaded. `data-vertical` sits on the page wrapper. The suggested gear's category chip is local state and is sent to `GET /gear` as `category`.
 - **Tour page:** a 404 or a rejected slug renders the not-found page. The package section has the id `book` (`BOOKING_SECTION_ID`), the target of the hero's View packages; it scrolls itself into view because the tour loads after the router has handled the hash. **Book this trip** sits under the packages on desktop and in a bar pinned to the bottom of the screen below 1024px (`BookingBar`); both carry the chosen package into the modal.
 - **Gear store:** `q`, `category`, `climate`, `tag`, `sort`, `page` live in the URL; a value equal to its default is left out. A filter change returns to page 1 and keeps the scroll position; a page change scrolls to the top. Typing in the search box replaces the history entry. `q` is sent to the API only between 2 and 64 characters.
 - **`useUrlFilters`** builds each change on its own latest params, not the last render's: the router moves the URL before React renders it, and two quick changes would otherwise undo each other.
@@ -263,8 +273,8 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - Vitest + React Testing Library, with MSW mocking the API using the real envelope shape (`success()` / `failure()` in `src/test/server.js`). An unhandled request fails the test.
 - Render through `renderApp` / `renderRoutes` (`src/test/render.jsx`): they supply the query client, theme, an in-memory router and the toaster. `setSystemDark()` in `src/test/matchMedia.js` sets the OS colour scheme.
 - `src/test/server.js` starts every test signed out (`GET /auth/me` → 401); `signedInAs(user)` signs one in and `record(method, path, resolver)` captures request bodies. Vitest clears mock call history between tests, so anything that must outlive one test (the Google stand-in's callback) is a plain function.
-- **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It answers for the demo photos' host (`picsum.photos`) with a flat placeholder so the suite does not depend on the network, and `watchForErrors` skips requests the app cancelled itself. It gives every test its own `X-Forwarded-For` (the harness rate-limits per IP) and `signInAs('customer' | 'incompleteCustomer' | 'admin')`, which injects that user's cookie from `/e2e/.auth.json`. `watchForErrors` ignores exactly one console line: the browser's own report of the 401 from `GET /auth/me` for a signed-out visitor.
-- Specs that change harness users (`account changes` in `account.spec.js`) run on the desktop project only and need a fresh harness: stop a harness left running before `npm run e2e`.
+- **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It answers for the demo photos' host (`picsum.photos`) with a flat placeholder so the suite does not depend on the network, and `watchForErrors` skips requests the app cancelled itself. `screenshot` with `fullPage` is taken with reduced motion, so blocks still waiting below the screen are drawn. It gives every test its own `X-Forwarded-For` (the harness rate-limits per IP) and `signInAs('customer' | 'incompleteCustomer' | 'admin')`, which injects that user's cookie from `/e2e/.auth.json`. `watchForErrors` ignores exactly one console line: the browser's own report of the 401 from `GET /auth/me` for a signed-out visitor.
+- Specs that change harness users (`account changes` in `account.spec.js`) run on the desktop project only and need a fresh harness: stop a harness left running before `npm run e2e`. Stop a dev backend on port 5000 too: Playwright reuses whatever answers there, and the suite would then run against the dev database.
 - **Accessibility:** `e2e/a11y.spec.js` runs axe (WCAG 2.1 A and AA) on every route, the booking modal, the logo menu and the search overlay, in both themes at both widths, and fails on any serious or critical violation (`findA11yViolations` in `e2e/fixtures.js`). `/onboarding` is checked inside `account.spec.js`.
 - The harness has one incomplete user, and a profile can be completed once. Only the serial test in `account.spec.js` may use `incompleteCustomer`: it covers the guard, onboarding and the booking that waited for it.
 - **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 375px and 1440px. It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4173), or reuses them if they are already running. Screenshots go to `e2e/screenshots/` (gitignored). First run on a machine: `npx playwright install chromium`.
