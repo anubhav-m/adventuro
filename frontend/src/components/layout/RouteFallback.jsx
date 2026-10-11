@@ -1,10 +1,13 @@
-import { Spinner } from '../ui/Spinner.jsx';
+import { BandSkeleton } from './BandSkeleton.jsx';
 
 // Shown while the first route's code is loading.
 export function RouteFallback() {
   return (
-    <div className="flex min-h-dvh items-center justify-center">
-      <Spinner label="Loading" />
+    <div aria-busy="true" className="mx-auto max-w-content px-(--space-gutter) pt-20">
+      <span role="status" className="sr-only">
+        Loading
+      </span>
+      <BandSkeleton />
     </div>
   );
 }

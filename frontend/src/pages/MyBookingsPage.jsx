@@ -1,10 +1,10 @@
 import { ArrowRight, Ticket } from 'lucide-react';
 import { BookingList } from '../components/booking/BookingList.jsx';
+import { BookingListSkeleton } from '../components/booking/BookingListSkeleton.jsx';
 import { QueryBoundary } from '../components/QueryBoundary.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { Pagination } from '../components/ui/Pagination.jsx';
-import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useMyBookings } from '../hooks/queries/useMyBookings.js';
 import { useUrlFilters } from '../hooks/useUrlFilters.js';
 import { BRAND, ROUTES } from '../lib/constants.js';
@@ -28,7 +28,7 @@ export function MyBookingsPage() {
       <QueryBoundary
         query={bookings}
         isEmpty={(data) => data.bookings.length === 0}
-        skeleton={<Skeleton className="h-64" />}
+        skeleton={<BookingListSkeleton />}
         empty={
           <EmptyState
             icon={Ticket}

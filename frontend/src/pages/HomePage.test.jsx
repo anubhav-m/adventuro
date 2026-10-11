@@ -67,6 +67,20 @@ describe('HomePage', () => {
     );
   });
 
+  it('scrolls to a section of the same page, and opens another page in place', async () => {
+    const { router } = await openHome();
+    const user = userEvent.setup();
+    const scrollBehavior = () => document.documentElement.style.scrollBehavior;
+    expect(scrollBehavior()).toBe('');
+
+    await user.click(screen.getByRole('link', { name: 'Book Now' }));
+    await waitFor(() => expect(scrollBehavior()).toBe('smooth'));
+
+    await user.click(screen.getAllByRole('link', { name: 'About Us' })[0]);
+    await waitFor(() => expect(currentUrl(router)).toBe('/about'));
+    expect(scrollBehavior()).toBe('');
+  });
+
   it('renders the six verticals from the API: the route, then five bands coast to peak', async () => {
     await openHome();
     const links = await picker().findAllByRole('link');
@@ -173,9 +187,10 @@ describe('HomePage', () => {
     expect(gear().queryByRole('list')).not.toBeInTheDocument();
   });
 
-  it('shows loading skeletons in every data section until its data arrives', async () => {
+  it('holds each data section’s room without a skeleton until its data arrives', async () => {
     await openHome();
 
+    expect(screen.getByRole('main').querySelector('.animate-pulse')).not.toBeInTheDocument();
     for (const section of [picker(), grandIndia(), gear()]) {
       expect(section.getByRole('status')).toHaveTextContent('Loading');
     }

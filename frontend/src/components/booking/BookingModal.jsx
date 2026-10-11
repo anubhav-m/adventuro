@@ -3,14 +3,14 @@ import { useTour } from '../../hooks/queries/useTour.js';
 import { BOOKING_PARAMS } from '../../lib/constants.js';
 import { QueryBoundary } from '../QueryBoundary.jsx';
 import { Modal } from '../ui/Modal.jsx';
-import { Skeleton } from '../ui/Skeleton.jsx';
 import { BookingForm } from './BookingForm.jsx';
+import { BookingFormSkeleton } from './BookingFormSkeleton.jsx';
 
 // The form for the tour named in the URL, once the tour has loaded.
 function BookingContent({ slug, tierId }) {
   const tour = useTour(slug);
   return (
-    <QueryBoundary query={tour} skeleton={<Skeleton className="h-80" />}>
+    <QueryBoundary query={tour} skeleton={<BookingFormSkeleton />}>
       {(data) => <BookingForm key={data.id} tour={data} tierId={tierId} />}
     </QueryBoundary>
   );

@@ -6,6 +6,7 @@ import { routes } from '../router.jsx';
 import {
   CATEGORIES,
   GEAR,
+  GOA_TOUR,
   mockCatalog,
   mockGear,
   mockTaxonomies,
@@ -247,5 +248,37 @@ describe('VerticalPage', () => {
     mockGear();
     await user.click(main.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'PeakPulse' })).toBeInTheDocument();
+  });
+
+  it('loads a tour when its card is pointed at, and opens its hero before the tour arrives', async () => {
+    await openVertical();
+    const user = userEvent.setup();
+    const arrival = Promise.withResolvers();
+    let requests = 0;
+    server.use(
+      http.get(api(`/tours/${GOA_TOUR.slug}`), async () => {
+        requests += 1;
+        await arrival.promise;
+        return success({ tour: GOA_TOUR });
+      }),
+    );
+
+    await user.hover(expeditions().getByRole('heading', { name: 'Goa Coastal Escape' }));
+    await waitFor(() => expect(requests).toBe(1));
+
+    await user.click(expeditions().getByRole('link', { name: 'Explore Goa Coastal Escape' }));
+    const header = within(
+      (await screen.findByRole('heading', { level: 1, name: 'Goa Coastal Escape' })).closest(
+        'header',
+      ),
+    );
+    expect(header.getByText('North Goa, Goa')).toBeInTheDocument();
+    expect(header.getByRole('link', { name: 'TideTrail' })).toHaveAttribute('href', '/v/tidetrail');
+    expect(screen.getByRole('article')).toHaveAttribute('data-vertical', 'tidetrail');
+    expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument();
+
+    arrival.resolve();
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(requests).toBe(1);
   });
 });

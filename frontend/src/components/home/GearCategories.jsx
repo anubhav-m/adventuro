@@ -7,18 +7,10 @@ import { Button } from '../ui/Button.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
 import { Reveal } from '../ui/Reveal.jsx';
 import { SectionHeader } from '../ui/SectionHeader.jsx';
-import { Skeleton } from '../ui/Skeleton.jsx';
 
 const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
-const SKELETON_COUNT = 8;
-
-const skeleton = (
-  <div className={GRID}>
-    {Array.from({ length: SKELETON_COUNT }, (_, index) => (
-      <Skeleton key={index} className="h-32" />
-    ))}
-  </div>
-);
+// No skeleton on the home page: the grid's room is held, and the cards rise in one by one.
+const room = <div className="h-152 lg:h-68" />;
 
 export function GearCategories() {
   const categories = useTaxonomies(TAXONOMY_TYPE.CATEGORY);
@@ -41,7 +33,7 @@ export function GearCategories() {
       <div className="mt-10">
         <QueryBoundary
           query={categories}
-          skeleton={skeleton}
+          skeleton={room}
           empty={<EmptyState title="Gear categories are on their way." />}
         >
           {(list) => (

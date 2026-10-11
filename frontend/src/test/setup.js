@@ -9,6 +9,8 @@ installMatchMedia();
 // jsdom does not implement scrolling; the router's scroll restoration calls both.
 window.scrollTo = () => {};
 Element.prototype.scrollIntoView = () => {};
+// jsdom cannot draw, and reports every attempt; the particle field does nothing without a context.
+HTMLCanvasElement.prototype.getContext = () => null;
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 

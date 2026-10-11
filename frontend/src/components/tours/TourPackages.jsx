@@ -22,7 +22,7 @@ export function TourPackages({ tourSlug, tiers, tierId, onTierChange, className 
       ref={sectionRef}
       id={BOOKING_SECTION_ID}
       title="Choose your package"
-      className={cn('scroll-mt-24', className)}
+      className={cn('scroll-mt-28', className)}
     >
       <TierSelector tiers={tiers} value={tierId} onChange={onTierChange} hideLegend />
       <Button to={bookingLink(tourSlug, tierId)} preventScrollReset className="max-lg:hidden">

@@ -4,8 +4,8 @@ import { QueryBoundary } from '../QueryBoundary.jsx';
 import { ChipGroup } from '../ui/ChipGroup.jsx';
 import { Field } from '../ui/Field.jsx';
 import { Select } from '../ui/Select.jsx';
-import { Skeleton } from '../ui/Skeleton.jsx';
 import { getCategoryIcon } from './categoryIcons.js';
+import { GearFiltersSkeleton } from './GearFiltersSkeleton.jsx';
 import { GearSearchField } from './GearSearchField.jsx';
 
 const GROUP_LABEL = 'text-sm font-bold';
@@ -36,11 +36,7 @@ export function GearFilters({ filters, onChange }) {
           )}
         </Field>
       </div>
-      <QueryBoundary
-        query={taxonomies}
-        skeleton={<Skeleton className="h-28" />}
-        isEmpty={() => false}
-      >
+      <QueryBoundary query={taxonomies} skeleton={<GearFiltersSkeleton />} isEmpty={() => false}>
         {(list) => {
           const byType = Object.groupBy(list, ({ type }) => type);
           const categories = byType[TAXONOMY_TYPE.CATEGORY] ?? [];

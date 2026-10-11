@@ -1,6 +1,6 @@
 import { useMe } from '../../hooks/queries/useMe.js';
 import { ErrorState } from '../ui/ErrorState.jsx';
-import { Spinner } from '../ui/Spinner.jsx';
+import { SkeletonText } from '../ui/SkeletonText.jsx';
 
 const FRAME = 'mx-auto flex max-w-content px-(--space-gutter) pt-(--space-section)';
 
@@ -10,7 +10,10 @@ export function SessionBoundary({ children }) {
   if (me.isPending) {
     return (
       <div aria-busy="true" className={FRAME}>
-        <Spinner label="Loading" />
+        <span role="status" className="sr-only">
+          Loading
+        </span>
+        <SkeletonText heading lines={4} className="max-w-prose" />
       </div>
     );
   }

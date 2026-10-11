@@ -354,17 +354,20 @@ The home page's vertical picker and its most recognisable element. Reference ske
 - Never darken a photo to put text on it. Text goes on a field or a ground beside the photo.
 - Ratios: tour card 4:3, tour hero and gallery 16:9, vertical hero 4:5 on desktop and 16:9 on phones, gear 1:1. `object-fit: cover`.
 - Missing image: the vertical's field and pattern, with its icon. For gear: `--color-surface-raised` with the category icon.
-- While loading: a flat `--color-surface-raised` block that fades in over `--duration-base`. No shimmer sweep.
+- While loading: a flat `--color-surface-raised` block that pulses, and the photo fades in over `--duration-base`; one the browser already holds is there at once. No shimmer sweep.
+- **Loading content** is a skeleton in the shape of what is coming: a card's outline with its photo, lines and buttons, a row of chip pills, a form's fields. Its pieces are flat `--color-surface-raised` and pulse together. The home page is the exception: it shows no skeleton at all, holds each section's room, and lets the content rise in staggered when it arrives. Never one large block for a whole section, and never a spinner: a spinner only marks an action in progress, inside the button that started it.
 
 ### Motion
 - `--duration-fast` (120ms) for hover and press; `--duration-base` (200ms) for menus, chips, and fades; `--duration-slow` (420ms) for the modal, sheet, and terrain. Easing is `--ease-out`; `--ease-in-out` only for things that move and return.
 - **Page arrival:** every page rises 16px and fades in over `--duration-slow` when the path changes. A change of search params (filters, the booking modal) is the same page and does not replay it.
 - **Scroll reveal:** a section heading, a field band, and a grid of cards rise 24px and fade in as they come on screen, over 1.5 × `--duration-slow`. The items of a group follow one another 70ms apart (capped at the eighth). A block the page has scrolled past stays in place; one that drops back below the screen goes out of sight at once and rises in again on the way down.
 - **The terrain:** each time it comes on screen the bands rise into place left to right and the route line draws itself across them.
+- **In-page links:** a link to a section of the page it is on (Book Now, View packages) scrolls there smoothly and stops with the section's heading just under the navbar. A new page always opens at its top, with no scroll.
 - **Hover and press:** cards lift 4px and their photo grows 5%; arrows on a card or band slide 4–6px toward where they point; buttons press in to 97% (icon buttons to 90%). Menus drop in from 8px above.
-- **Parallax:** a field band's photo drifts ±6% inside its plate as the plate crosses the screen, and the vertical hero's pattern strip slides under the scroll. Both are CSS scroll-driven animations, so a browser without them shows the page still. Nothing else moves with the scroll, and text never does.
+- **Parallax:** a field band's photo drifts ±6% inside its plate as the plate crosses the screen, and the vertical hero's pattern strip slides under the scroll. Both are CSS scroll-driven animations, so a browser without them shows the page still. Apart from the survey marks, nothing else moves with the scroll, and text never does.
+- **Survey marks:** the bare ground behind every page carries a thin scatter of flat marks, about one per 16,000px² and never more than 90: dots in `--color-border`, small crosses in `--color-border-strong` for the nearest ones, and one in nine in `--color-brand`. They rise slowly (the nearest about 14px a second, farther ones slower) and take on about a third of the page's scroll speed, so they rush past while the page scrolls down, fall back while it scrolls up, and glide to rest over about 300ms. They are solid ink at full strength and sit behind everything: a vertical's field, a card, or a photo covers them, so they never show inside an ink.
 - Motion stays flat: it moves and fades things, and never adds a shadow, blur, or glow.
-- `prefers-reduced-motion: reduce`: no movement at all. Nothing waits to be revealed, the terrain is simply there, the route line is drawn, there is no parallax, and state changes are instant or a fade of at most `--duration-fast`.
+- `prefers-reduced-motion: reduce`: no movement at all. Nothing waits to be revealed, the terrain is simply there, the route line is drawn, there is no parallax, the survey marks are drawn once and stay where they are, and state changes are instant or a fade of at most `--duration-fast`.
 
 ### Browser surfaces
 - Text selection: `--color-brand` background, `--color-on-brand` text.

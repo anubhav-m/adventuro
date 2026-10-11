@@ -1,4 +1,5 @@
 import { bookingLink, DIFFICULTY_LABELS, getVerticalMeta, ROUTES } from '../../lib/constants.js';
+import { usePrefetchTour } from '../../hooks/queries/useTour.js';
 import { formatDuration } from '../../lib/format.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
@@ -10,12 +11,22 @@ const MAX_ACTIVITIES = 3;
 
 // A tour in its vertical's listing. `verticalKey` picks the icon of the plate that stands in
 // for a missing cover photo; the colours come from the `data-vertical` region around the card.
+// Pointing at the card or focusing inside it loads the tour, so Explore opens on it at once.
 export function TourCard({ tour, verticalKey }) {
+  const prefetch = usePrefetchTour();
+  const prefetchTour = () => prefetch(tour.slug);
   const { icon: Icon } = getVerticalMeta(verticalKey);
   const activities = tour.topActivities.slice(0, MAX_ACTIVITIES);
 
   return (
-    <Card as="article" flush interactive className="flex h-full flex-col overflow-hidden">
+    <Card
+      as="article"
+      flush
+      interactive
+      onPointerEnter={prefetchTour}
+      onFocus={prefetchTour}
+      className="flex h-full flex-col overflow-hidden"
+    >
       <div className="relative">
         <Photo
           image={tour.coverImage}

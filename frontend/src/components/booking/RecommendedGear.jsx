@@ -3,7 +3,6 @@ import { gearGoUrl } from '../../api/gear.api.js';
 import { useGearList } from '../../hooks/queries/useGearList.js';
 import { formatPrice } from '../../lib/format.js';
 import { QueryBoundary } from '../QueryBoundary.jsx';
-import { Skeleton } from '../ui/Skeleton.jsx';
 
 const LIMIT = 4;
 
@@ -19,7 +18,6 @@ export function RecommendedGear({ tourSlug }) {
       <QueryBoundary
         query={gear}
         isEmpty={(data) => data.gear.length === 0}
-        skeleton={<Skeleton className="h-11" />}
         empty={<p className="text-sm text-text-muted">No gear picked for this trip yet.</p>}
       >
         {(data) => (

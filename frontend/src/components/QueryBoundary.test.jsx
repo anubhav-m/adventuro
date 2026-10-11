@@ -42,10 +42,12 @@ describe('QueryBoundary', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('falls back to a spinner when no skeleton is given', () => {
+  it('falls back to lines of copy when no skeleton is given, never a spinner', () => {
     respondWithTours([]);
-    renderApp(<Tours />);
+    const { container } = renderApp(<Tours />);
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
+    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(3);
+    expect(container.querySelector('.animate-spin')).not.toBeInTheDocument();
   });
 
   it('shows our own error text with a retry that refetches', async () => {

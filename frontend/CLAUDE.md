@@ -56,8 +56,8 @@ frontend/src/
 │   └── auth.api.js, users.api.js, verticals.api.js, tours.api.js, gear.api.js,
 │       taxonomies.api.js, bookings.api.js, search.api.js, newsletter.api.js
 ├── hooks/
-│   ├── queries/               # useMe, useVerticals, useVertical, useTour, useGearList,
-│   │                          # useTaxonomies, useMyBookings, useBooking, useSearch
+│   ├── queries/               # useMe, useVerticals, useVertical, useTour (+ usePrefetchTour), useTourPreview,
+│   │                          # useGearList, useTaxonomies, useMyBookings, useBooking, useSearch
 │   ├── mutations/             # useGoogleSignIn, useSignOut, useUpdateProfile, useCreateBooking,
 │   │                          # useDownloadTicket, useSubscribe
 │   ├── useTheme.js            # ThemeContext + useTheme()
@@ -67,21 +67,26 @@ frontend/src/
 │   └── useUrlFilters.js       # { filters, setFilters, clearFilters } on URL search params
 ├── components/
 │   ├── ui/                    # Button, IconButton, Card, Badge, Chip, ChipGroup, Input, Select, Field,
-│   │                          # Modal, Dropdown, Stepper, Skeleton, Spinner, Pagination, Avatar,
+│   │                          # Modal, Dropdown, Stepper, Skeleton, SkeletonText, Spinner, Pagination, Avatar,
 │   │                          # EmptyState, ErrorState, InlineError, Price, SectionHeader,
-│   │                          # Photo (a photo plate: flat until loaded, fallback when missing; `zoom`, `parallax`),
+│   │                          # Photo (a photo plate: a pulsing block until loaded, at once when the browser already holds it,
+│   │                          # fallback when missing; `zoom`, `parallax`),
 │   │                          # Reveal (rises in on scroll; `stagger` for a group's children)
 │   ├── layout/                # PageLayout, Navbar, LogoMenu, AccountMenu, AccountSummary, ThemeSwitcher,
 │   │                          # SearchOverlay, SearchPanel, SearchGroup, Footer, FooterLinks,
 │   │                          # NewsletterForm, Wordmark, TerrainLine, RouteFallback, AppToaster,
+│   │                          # ParticleField (the canvas of survey marks behind every page, in PageLayout),
 │   │                          # FieldBand (a vertical's ink field: copy left, photo plate right),
+│   │                          # BandSkeleton (a band that is still loading),
+│   │                          # InPageScroll (smooth scroll for same-page hash links),
 │   │                          # ContentSection (one titled part of About and the policy pages)
 │   ├── home/                  # HomeHero, ChooseYourAdventure, Terrain, RouteLine,
 │   │                          # GrandIndiaFeature, GrandIndiaBanner, GearCategories
 │   ├── verticals/             # VerticalCard (a band of the home terrain), terrain.js (its profiles),
 │   │                          # VerticalHero
-│   ├── tours/                 # TourCard, TourGrid, TourDetail (the page for a loaded tour; holds the
-│   │                          # chosen tier), TourHero, TourGallery, TourSection, SignatureActivity,
+│   ├── tours/                 # TourCard, TourGrid, TourDetail (everything under the hero for a loaded tour;
+│   │                          # holds the chosen tier), TourHero, TourGallery, TourSection,
+│   │                          # SignatureActivity,
 │   │                          # ItineraryTimeline, InclusionList, ReportingInfo, ReportingDetails (also on
 │   │                          # the ticket), TourPackages, TierSelector
 │   ├── booking/               # BookingModal (in PageLayout, opened by the URL), BookingForm, TravelerStepper,
@@ -129,6 +134,7 @@ frontend/src/
 │   ├── googleIdentity.js      # loads and initialises Google Identity Services once
 │   ├── queryClient.js         # createQueryClient(): staleTime, retry policy, UNAUTHENTICATED clears `me`
 │   ├── menu.js                # arrow / Home / End navigation shared by Dropdown and LogoMenu
+│   ├── particles.js           # the survey marks: createMarks, stepMarks, easeScrollSpeed (no DOM)
 │   └── cn.js                  # joins class names
 └── test/                      # setup.js, server.js (MSW + envelope helpers), render.jsx, matchMedia.js,
                                # fixtures.js (users, catalog, mockGear, mockTaxonomies),
@@ -145,7 +151,8 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 - **No duplication.** When markup or logic appears a second time, extract it into a component, hook, or `lib/` util. Reuse `ui/` primitives everywhere. Never re-style a raw `<button>` in a feature component.
 - **One component per file**, PascalCase filename, **named exports only**.
 - Components never call `fetch` or `api/*` directly. Data flows through `hooks/queries` and `hooks/mutations`. Query keys come only from `queryKeys.js`.
-- Every data view follows the same pattern via `QueryBoundary`: skeleton while loading → `ErrorState` (human message + Retry) → `EmptyState` → content.
+- Every data view follows the same pattern via `QueryBoundary`: a skeleton while loading → `ErrorState` (human message + Retry) → `EmptyState` → content.
+- **Loading is a skeleton, never a spinner and never one big block** (the home page alone shows nothing and reveals its content instead, see below). A skeleton has the shape of what it stands for and is built from `Skeleton` pieces (`pill` for buttons and chips) and `SkeletonText`: `TourCardSkeleton`, `GearCardSkeleton`, `GearFiltersSkeleton`, `BookingFormSkeleton`, `TicketSkeleton`, `BookingListSkeleton`, and `BandSkeleton` for a field band. `QueryBoundary` falls back to `SkeletonText`. The route fallback and `SessionBoundary` are skeletons too. `Spinner` is only for an action in progress: inside a loading `Button`, and beside "Signing you in". Where a page can open from data it already holds (the vertical hero, the tour hero) it does.
 - Mutations invalidate exactly the affected query keys. Use optimistic updates only for the theme preference.
 - Props over variants explosion: use `variant` and `size` props on primitives instead of near-duplicate components.
 - Filters, search, and pagination on list pages live in **URL search params** (`useUrlFilters`), so they can be shared and the back button works.
@@ -211,7 +218,9 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 ## Behavior requirements from the UI flow
 
 - **Home, Choose Your Adventure:** the terrain section from `/DESIGN.md`, not a carousel. Five bands side by side from 1280px; below that, full-width stacked rows with Grand India Tour as a route-orange row on top. Each band is one link, in coast-to-peak order (`TERRAIN_ORDER`), with its name and subtitle from `GET /verticals`. Nothing scrolls sideways, so there are no prev/next controls.
-- **Home, Book Now:** a link to `#choose-your-adventure`; the router's scroll restoration moves to the section.
+- **Home, Book Now:** a link to `#choose-your-adventure`; the router's scroll restoration moves to the section. The section's `scroll-margin-top` cancels its own top padding, so the heading lands just under the navbar and the whole terrain fits on the screen.
+- **In-page links scroll, pages do not:** `InPageScroll` (in `PageLayout`, rendered just before `ScrollRestoration` so its layout effect runs first) sets `scroll-behavior: smooth` on `<html>` when a navigation stays on the same path and has a hash (Book Now, View packages), and clears it otherwise. A new page, the first page and a link to a section of another page open in place. Do not put `scroll-behavior: smooth` in the CSS: the router's scroll to the top of a new page would glide too.
+- **Home, loading:** the home page shows no skeletons. Each data section passes `QueryBoundary` an empty block of about the section's height as its `skeleton`, so the page keeps its length, and the content rises in staggered (`Reveal stagger`, the terrain's own reveal) when it arrives. Everywhere else loading is a skeleton.
 - **Home, Grand India Tour:** the banner's chips are the newest tour's `topActivities`, and View Itinerary opens that tour, or the vertical page when it has no tour.
 - **Logo menu:** the wordmark is the home link; the chevron button beside it owns the menu. It lists the six verticals, and below 768px the navbar's links (`NAV_LINKS`) after them. It opens on hover, keyboard focus, click, and tap. Closes on Escape, outside press, pointer leave, focus leaving, and route change. A mouse click never closes it (hovering already opened it); a tap toggles. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
 - **Navbar links:** Gear Store and About Us (`NAV_LINKS`), as `NavLink`s so the current page keeps its underline. They need 768px beside the wordmark and Sign in, so below that they are in the logo menu.
@@ -229,8 +238,10 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
   - scroll reveal: wrap a block in `Reveal`, or a group in `<Reveal stagger>` (its direct children rise in turn). A block replays each time the page scrolls back down to it; one already scrolled past stays put. `SectionHeader`, `FieldBand`, `TourGrid`, `GearGrid` and the home terrain already do. The hidden state is CSS on `data-reveal` without `data-revealed`, and only under `prefers-reduced-motion: no-preference`
   - do not put `Reveal` on an element that has its own `transition-*` utility; wrap it instead
   - parallax (`parallax-photo`, `parallax-pattern`) is CSS scroll-driven animation behind `@supports`; no scroll listeners
+  - survey marks: `ParticleField` is one fixed canvas behind the page (`-z-10`), mounted once in `PageLayout`. Its frame loop reads `window.scrollY` itself (still no scroll listener) and `lib/particles.js` does the movement, so the numbers are tested without a canvas. Its inks are read from the tokens and read again when `data-theme` changes. With reduced motion it draws once and runs no loop. Anything with a solid ground covers the marks; a section with no background of its own shows them
+  - jsdom has no canvas: `src/test/setup.js` makes `getContext` return `null`, and the field does nothing without a context
 - **Vertical page:** a key outside the six in `VERTICALS` renders the not-found page without a request. The hero never waits for data: it renders at once as the vertical's field with the name from `VERTICALS`, takes the subtitle, description and photo from the cached `GET /verticals` list when the home page has loaded it (`useVerticals({ enabled: false })`, which never fetches), and then from the vertical's own response. Only the tour grid shows a skeleton, and the suggested gear follows once the vertical has loaded. `data-vertical` sits on the page wrapper. The suggested gear's category chip is local state and is sent to `GET /gear` as `category`.
-- **Tour page:** a 404 or a rejected slug renders the not-found page. The package section has the id `book` (`BOOKING_SECTION_ID`), the target of the hero's View packages; it scrolls itself into view because the tour loads after the router has handled the hash. **Book this trip** sits under the packages on desktop and in a bar pinned to the bottom of the screen below 1024px (`BookingBar`); both carry the chosen package into the modal.
+- **Tour page:** a 404 or a rejected slug renders the not-found page. Like the vertical hero, the tour hero does not wait when the visitor comes from a listing: `useTourPreview(slug)` finds the tour's card (and its vertical) in the cached `GET /verticals/:key` responses without fetching, the hero renders from it, and only the part under the hero shows a skeleton until the tour arrives. The hero stays mounted when it does. A direct visit has no card, so the hero is a `BandSkeleton` until the tour arrives. `TourCard` calls `usePrefetchTour` on pointer enter and on focus, so the tour is usually loaded before Explore is pressed. The package section has the id `book` (`BOOKING_SECTION_ID`), the target of the hero's View packages; it scrolls itself into view because the tour loads after the router has handled the hash. **Book this trip** sits under the packages on desktop and in a bar pinned to the bottom of the screen below 1024px (`BookingBar`); both carry the chosen package into the modal.
 - **Gear store:** `q`, `category`, `climate`, `tag`, `sort`, `page` live in the URL; a value equal to its default is left out. A filter change returns to page 1 and keeps the scroll position; a page change scrolls to the top. Typing in the search box replaces the history entry. `q` is sent to the API only between 2 and 64 characters.
 - **`useUrlFilters`** builds each change on its own latest params, not the last render's: the router moves the URL before React renders it, and two quick changes would otherwise undo each other.
 - **Booking:**

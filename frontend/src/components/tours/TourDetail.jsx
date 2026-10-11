@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { BRAND } from '../../lib/constants.js';
 import { BookingBar } from '../booking/BookingBar.jsx';
 import { SuggestedGear } from '../gear/SuggestedGear.jsx';
 import { Badge } from '../ui/Badge.jsx';
@@ -8,20 +7,16 @@ import { ItineraryTimeline } from './ItineraryTimeline.jsx';
 import { ReportingInfo } from './ReportingInfo.jsx';
 import { SignatureActivity } from './SignatureActivity.jsx';
 import { TourGallery } from './TourGallery.jsx';
-import { TourHero } from './TourHero.jsx';
 import { TourPackages } from './TourPackages.jsx';
 import { TourSection } from './TourSection.jsx';
 
-// The whole tour page for a loaded tour, in its vertical's colours. It holds the chosen package,
-// which both Book actions (beside the packages, and the bar on smaller screens) carry into
-// the booking modal.
+// Everything under the hero for a loaded tour. It holds the chosen package, which both Book
+// actions (beside the packages, and the bar on smaller screens) carry into the booking modal.
 export function TourDetail({ tour }) {
   const [tierId, setTierId] = useState(tour.tiers[0].id);
 
   return (
-    <article data-vertical={tour.vertical.key}>
-      <title>{`${tour.title} · ${BRAND.NAME}`}</title>
-      <TourHero tour={tour} />
+    <>
       <div className="mx-auto flex max-w-content flex-col gap-12 px-(--space-gutter) pt-10">
         <TourGallery title={tour.title} photos={tour.gallery} />
         <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
@@ -58,6 +53,6 @@ export function TourDetail({ tour }) {
         scope={{ tour: tour.slug }}
       />
       <BookingBar tourSlug={tour.slug} tier={tour.tiers.find((tier) => tier.id === tierId)} />
-    </article>
+    </>
   );
 }

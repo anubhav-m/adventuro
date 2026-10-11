@@ -1,9 +1,9 @@
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'react-router';
 import { Ticket } from '../components/booking/Ticket.jsx';
+import { TicketSkeleton } from '../components/booking/TicketSkeleton.jsx';
 import { QueryBoundary } from '../components/QueryBoundary.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useBooking } from '../hooks/queries/useBooking.js';
 import { BRAND, ROUTES } from '../lib/constants.js';
 import { NotFoundPage } from './NotFoundPage.jsx';
@@ -25,7 +25,7 @@ export function TicketPage() {
         My bookings
       </Button>
       <div className="w-full">
-        <QueryBoundary query={booking} skeleton={<Skeleton className="h-96" />}>
+        <QueryBoundary query={booking} skeleton={<TicketSkeleton />}>
           {(data) => <Ticket booking={data} />}
         </QueryBoundary>
       </div>
