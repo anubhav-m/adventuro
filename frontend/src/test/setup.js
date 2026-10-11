@@ -6,8 +6,9 @@ import { installMatchMedia, resetMatchMedia } from './matchMedia.js';
 import { server } from './server.js';
 
 installMatchMedia();
-// jsdom does not implement scrolling; the router's scroll restoration calls it.
+// jsdom does not implement scrolling; the router's scroll restoration calls both.
 window.scrollTo = () => {};
+Element.prototype.scrollIntoView = () => {};
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 

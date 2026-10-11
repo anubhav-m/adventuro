@@ -1,20 +1,13 @@
-import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme.js';
-import { THEME } from '../../lib/constants.js';
+import { THEME_OPTIONS } from '../../lib/constants.js';
 import { Dropdown } from '../ui/Dropdown.jsx';
 import { IconButton } from '../ui/IconButton.jsx';
 
-const OPTIONS = [
-  { value: THEME.SYSTEM, label: 'System', icon: Monitor },
-  { value: THEME.LIGHT, label: 'Light', icon: Sun },
-  { value: THEME.DARK, label: 'Dark', icon: Moon },
-];
-
 export function ThemeSwitcher() {
   const { preference, setPreference } = useTheme();
-  const current = OPTIONS.find((option) => option.value === preference);
+  const current = THEME_OPTIONS.find((option) => option.value === preference);
 
-  const items = OPTIONS.map(({ value, label, icon }) => ({
+  const items = THEME_OPTIONS.map(({ value, label, icon }) => ({
     key: value,
     label,
     icon,

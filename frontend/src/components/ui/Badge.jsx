@@ -4,6 +4,8 @@ const TONES = {
   neutral: 'border border-border bg-surface-raised text-text',
   // For a badge laid over a photo: a solid plate, never a translucent one.
   solid: 'bg-bg text-text',
+  // For a badge on a vertical's field: it takes the field's own text colour.
+  outline: 'border border-current',
   accent: 'bg-accent-tint text-accent-text',
   info: 'bg-info-tint text-info',
   success: 'bg-success-tint text-success',

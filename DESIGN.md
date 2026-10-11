@@ -25,7 +25,7 @@ colors:
 typography:
   hero:
     fontFamily: "Archivo, 'Arial Black', system-ui, sans-serif"
-    fontSize: "clamp(3rem, 11vw, 10rem)"
+    fontSize: "clamp(2rem, 11vw, 9rem)"
     fontWeight: 900
     lineHeight: 0.9
     letterSpacing: "-0.03em"
@@ -250,8 +250,8 @@ Where a vertical's field meets the ground above it, the edge is a drawn profile 
 
 ### Phone
 
-- The terrain section becomes five stacked full-width fields, each at least 96px tall with its own profile on top, in the same coast-to-peak order.
-- The hero wordmark stays on one line (`11vw`).
+- Below 1280px the terrain section becomes five stacked full-width fields, each at least 96px tall with its own profile on top, in the same coast-to-peak order. Each profile is cut into the field above it, and Grand India Tour is a route-orange row on top of the stack. (Five bands side by side need 1280px for the names to fit at 24px.)
+- The hero wordmark stays on one line: `--text-hero` is `clamp(2rem, 11vw, 9rem)`, which keeps it inside the content width from 320px up to the 80rem container.
 - The booking panel becomes a sheet pinned to the bottom with the live total and Confirm Booking.
 
 ## Elevation & Depth
@@ -330,7 +330,8 @@ The home page's vertical picker and its most recognisable element. Reference ske
 - Each band is a solid field of its ink. Its pattern fills the upper part only; the lower part is plain so the name and one-line description sit on flat colour.
 - Each band is one link: name in Display, the one-liner in Label, an arrow icon.
 - Grand India Tour is the dashed route-orange line that runs through the sky above all five and ends in a ring. It starts from a route-orange pill that links to the Grand India Tour vertical.
-- Hover or focus on a band: it rises 8px and its pattern grows to fill the band.
+- Hover or focus on a band: it rises 8px and its pattern grows to fill the band above its label, which stays on flat colour.
+- It is not a carousel. Nothing scrolls sideways at any width, so it has no previous / next controls.
 
 ### Signature: the vertical hero (`/v/:verticalKey`)
 

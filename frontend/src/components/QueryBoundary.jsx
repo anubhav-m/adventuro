@@ -9,10 +9,19 @@ const isEmptyByDefault = (data) =>
 // <QueryBoundary query={query} skeleton={<Grid />} empty={<EmptyState … />}>
 //   {(data) => <List items={data} />}
 // </QueryBoundary>
-export function QueryBoundary({ query, isEmpty = isEmptyByDefault, skeleton, empty, children }) {
+// `stateClassName` frames the loading, error and empty states when the content itself is
+// laid out differently (a full-bleed section, say).
+export function QueryBoundary({
+  query,
+  isEmpty = isEmptyByDefault,
+  skeleton,
+  empty,
+  stateClassName,
+  children,
+}) {
   if (query.isPending) {
     return (
-      <div aria-busy="true">
+      <div aria-busy="true" className={stateClassName}>
         {skeleton ? (
           <>
             <span role="status" className="sr-only">
@@ -26,7 +35,19 @@ export function QueryBoundary({ query, isEmpty = isEmptyByDefault, skeleton, emp
       </div>
     );
   }
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />;
-  if (isEmpty(query.data)) return empty ?? <EmptyState title="Nothing to show here yet." />;
+  if (query.isError) {
+    return (
+      <div className={stateClassName}>
+        <ErrorState error={query.error} onRetry={query.refetch} />
+      </div>
+    );
+  }
+  if (isEmpty(query.data)) {
+    return (
+      <div className={stateClassName}>
+        {empty ?? <EmptyState title="Nothing to show here yet." />}
+      </div>
+    );
+  }
   return children(query.data);
 }

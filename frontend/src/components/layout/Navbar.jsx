@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { useScrolled } from '../../hooks/useScrolled.js';
 import { cn } from '../../lib/cn.js';
 import { ROUTES } from '../../lib/constants.js';
-import { Button } from '../ui/Button.jsx';
+import { AccountMenu } from './AccountMenu.jsx';
 import { LogoMenu } from './LogoMenu.jsx';
 import { ThemeSwitcher } from './ThemeSwitcher.jsx';
 
@@ -29,9 +29,7 @@ export function Navbar() {
         </Link>
         <span className="flex-1" />
         <ThemeSwitcher />
-        <Button to={ROUTES.SIGN_IN} size="sm">
-          Sign in
-        </Button>
+        <AccountMenu />
       </nav>
     </header>
   );

@@ -8,8 +8,9 @@ const VARIANTS = {
   outline: 'border-text not-disabled:hover:bg-text not-disabled:hover:text-bg',
 };
 
-// `label` is required: it is the button's only accessible name.
-export function IconButton({ icon: Icon, label, variant = 'ghost', className, ...rest }) {
+// `label` is required: it is the button's only accessible name. `children` replaces the icon,
+// for a button that shows something else in the same round target (an avatar).
+export function IconButton({ icon: Icon, label, variant = 'ghost', className, children, ...rest }) {
   return (
     <button
       type="button"
@@ -17,7 +18,7 @@ export function IconButton({ icon: Icon, label, variant = 'ghost', className, ..
       className={cn(BASE, VARIANTS[variant], className)}
       {...rest}
     >
-      <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+      {children ?? <Icon size={20} strokeWidth={1.75} aria-hidden="true" />}
     </button>
   );
 }

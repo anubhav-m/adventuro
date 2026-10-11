@@ -16,7 +16,7 @@
   --font-display-stretch: 125%;
 
   /* Type scale */
-  --text-hero: clamp(3rem, 11vw, 10rem);
+  --text-hero: clamp(2rem, 11vw, 9rem);
   --text-h1: clamp(2.25rem, 5vw, 4rem);
   --text-h2: clamp(1.75rem, 3.2vw, 2.75rem);
   --text-h3: 1.5rem;

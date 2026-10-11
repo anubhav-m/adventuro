@@ -165,3 +165,18 @@
 @utility animate-rise-in {
   animation: rise-in var(--duration-slow) var(--ease-out) both;
 }
+
+/* The home page's route line draws itself from left to right. */
+@keyframes draw-in {
+  from {
+    clip-path: inset(-10% 100% -10% 0);
+  }
+
+  to {
+    clip-path: inset(-10% 0 -10% 0);
+  }
+}
+
+@utility animate-draw-in {
+  animation: draw-in calc(var(--duration-slow) * 3) var(--ease-out) var(--duration-slow) backwards;
+}

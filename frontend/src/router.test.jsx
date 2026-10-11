@@ -36,7 +36,7 @@ describe('app shell', () => {
     expect(navbar.getByRole('button', { name: 'Browse verticals and gear' })).toBeInTheDocument();
     expect(navbar.getByRole('link', { name: 'About Us' })).toHaveAttribute('href', '/about');
     expect(navbar.getByRole('button', { name: 'Theme: System' })).toBeInTheDocument();
-    expect(navbar.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin');
+    expect(await navbar.findByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin');
   });
 
   it('has a footer with every section from the UI flow', async () => {

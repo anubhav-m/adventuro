@@ -12,8 +12,9 @@ const OPEN_KEYS = ['ArrowDown', 'ArrowUp'];
 // A menu button. `trigger` is a render prop that receives the props of the button:
 // <Dropdown label="Theme" items={items} trigger={(props) => <IconButton {...props} />} />
 // Items are { key, label, icon?, onSelect?, to?, selected? }. Giving any item a `selected`
-// boolean makes the menu a single-choice list (radio items).
-export function Dropdown({ label, items, trigger, align = 'end' }) {
+// boolean makes the menu a single-choice list (radio items). `header` is plain content shown
+// above the items.
+export function Dropdown({ label, items, trigger, header, align = 'end' }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
@@ -73,48 +74,46 @@ export function Dropdown({ label, items, trigger, align = 'end' }) {
         onKeyDown: handleTriggerKeyDown,
       })}
       {open && (
-        <ul
-          ref={menuRef}
-          id={menuId}
-          role="menu"
-          aria-label={label}
-          onKeyDown={handleMenuKeys}
+        <div
           className={cn(
             'absolute top-full z-40 mt-2 min-w-48 animate-fade-in rounded-panel border border-border bg-surface-raised p-2 shadow-raised',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
-          {items.map((item) => {
-            const Icon = item.icon;
-            const itemProps = {
-              role: isChoice ? 'menuitemradio' : 'menuitem',
-              'aria-checked': isChoice ? Boolean(item.selected) : undefined,
-              tabIndex: -1,
-              className: ITEM,
-              onClick: () => selectItem(item),
-            };
-            const content = (
-              <>
-                {Icon && <Icon size={18} strokeWidth={1.75} aria-hidden="true" />}
-                <span className="flex-1">{item.label}</span>
-                {item.selected && <Check size={18} strokeWidth={1.75} aria-hidden="true" />}
-              </>
-            );
-            return (
-              <li key={item.key} role="none">
-                {item.to ? (
-                  <Link to={item.to} {...itemProps}>
-                    {content}
-                  </Link>
-                ) : (
-                  <button type="button" {...itemProps}>
-                    {content}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+          {header}
+          <ul ref={menuRef} id={menuId} role="menu" aria-label={label} onKeyDown={handleMenuKeys}>
+            {items.map((item) => {
+              const Icon = item.icon;
+              const itemProps = {
+                role: isChoice ? 'menuitemradio' : 'menuitem',
+                'aria-checked': isChoice ? Boolean(item.selected) : undefined,
+                tabIndex: -1,
+                className: ITEM,
+                onClick: () => selectItem(item),
+              };
+              const content = (
+                <>
+                  {Icon && <Icon size={18} strokeWidth={1.75} aria-hidden="true" />}
+                  <span className="flex-1">{item.label}</span>
+                  {item.selected && <Check size={18} strokeWidth={1.75} aria-hidden="true" />}
+                </>
+              );
+              return (
+                <li key={item.key} role="none">
+                  {item.to ? (
+                    <Link to={item.to} {...itemProps}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <button type="button" {...itemProps}>
+                      {content}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
