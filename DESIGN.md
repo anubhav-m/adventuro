@@ -229,7 +229,7 @@ Load as: `Archivo:wdth,wght@62..125,400..900`, `Onest:wght@400..800`, `Libre+Cas
 
 ### Named Rules
 
-**The One Loud Voice Rule.** Archivo expanded is for names and headings only. Never for body, buttons, chips, or anything under 24px.
+**The One Loud Voice Rule.** Archivo expanded is for names and headings only. Never for body, buttons, chips, or anything under 24px (except the navbar wordmark on phones, see Navigation).
 
 **The No Label-On-Top Rule.** No small uppercase label above a heading. The vertical page's "Ecosystem Vertical" badge is a chip with the vertical's icon, set beside or below the name.
 
@@ -309,7 +309,8 @@ Every interactive element has hover, focus-visible, active, and disabled states.
 
 ### Navigation
 - **Navbar:** `--color-bg`, no border until the page scrolls, then a 1px `--color-border` bottom edge. Wordmark left, links in Onest 600, icons right. Sticky.
-- **Wordmark:** "ADVENTURO" in Archivo 125/900, uppercase, tracking 0.02em, `--color-text`. It is one component so a real logo can replace it.
+- **Wordmark:** "ADVENTURO" in Archivo 125/900, uppercase, tracking 0.02em, `--color-text`. It is one component so a real logo can replace it. In the navbar it is 24px from 640px up, 20px from 420px, and 18px below that: at 24px it is 208px wide and the bar cannot hold it beside the menu button, theme switcher, and Sign in on a phone. This is the one place Archivo goes under 24px.
+- **Navbar on phones:** the About Us link moves into the logo menu below 640px. The theme switcher is one icon button (the current theme's icon) that opens a three-item menu.
 - **Logo menu:** a panel listing the six verticals, each row a 12px square of its ink, its icon, and its name; then Shop Gear. The hovered row fills with that vertical's ink.
 - **Footer:** `--color-surface-sunken`, topped by a terrain line in route orange.
 
@@ -394,6 +395,6 @@ Same tokens, calmer and denser. It is a working tool.
 - **Don't** colour the primary button with a vertical's ink on neutral ground.
 - **Don't** mix two verticals' inks inside one component.
 - **Don't** add shadows to cards, or a coloured stripe down a card's side.
-- **Don't** set Archivo expanded below 24px or in uppercase outside the wordmark.
+- **Don't** set Archivo expanded below 24px (the navbar wordmark on phones is the only exception) or in uppercase outside the wordmark.
 - **Don't** hardcode a hex value, font name, radius, or shadow in a component.
 - **Don't** invent proof: no ratings, traveler counts, testimonials, or safety badges.

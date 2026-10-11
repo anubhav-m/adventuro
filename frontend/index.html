@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Adventuro: curated trips across India, from coast to camp and peak to palace, with the gear each one needs."
+    />
+    <title>Adventuro</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      (function () {
+        var preference = null;
+        try {
+          preference = localStorage.getItem('adventuro.theme');
+        } catch (error) {
+          preference = null;
+        }
+        var resolved =
+          preference === 'light' || preference === 'dark'
+            ? preference
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        document.documentElement.dataset.theme = resolved;
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Libre+Caslon+Text:ital@1&family=Onest:wght@400..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

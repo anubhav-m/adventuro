@@ -11,6 +11,7 @@ Visual design is decided. Read `/DESIGN.md` (rules) and `/PRODUCT.md` (audience 
 
 ## Stack
 
+- Node.js 24.x (LTS; `engines` pins `24.x`) for tooling and builds
 - React + Vite, JavaScript (ES modules, `.jsx`)
 - React Router (latest), with lazy-loaded routes
 - TanStack Query for **all** server state
@@ -18,13 +19,13 @@ Visual design is decided. Read `/DESIGN.md` (rules) and `/PRODUCT.md` (audience 
 - Tailwind CSS v4 (CSS-first config in `src/styles/index.css`, no `tailwind.config.js`)
 - `lucide-react` for icons, `sonner` for toasts
 - Google Identity Services, loaded directly from `https://accounts.google.com/gsi/client` and wrapped in one component. No wrapper library.
-- Dev tools: Vitest, React Testing Library, MSW, ESLint (flat config + react-hooks plugin), Prettier
+- Dev tools: Vitest (+ `@vitest/coverage-v8`), React Testing Library (+ `user-event`, `jest-dom`), MSW, jsdom, Playwright (`@playwright/test`, Chromium), ESLint (flat config + react-hooks plugin), Prettier
 
 Install everything at its latest stable version. Don't add a UI kit or a date library: use native `<input type="date">` and `Intl`.
 
 ## Scripts
 
-`dev`, `build`, `preview`, `lint`, `format`, `test`, `test:watch`.
+`dev` (port 5173), `build`, `preview` (port 4173), `lint`, `format`, `test`, `test:watch`, `test:coverage`, `e2e` (Playwright, see Testing).
 
 ## Environment
 
@@ -34,7 +35,8 @@ Install everything at its latest stable version. Don't add a UI kit or a date li
 | `VITE_GOOGLE_CLIENT_ID` | |
 
 - In dev, Vite proxies `/api` to `http://localhost:5000`.
-- In production, `vercel.json` rewrites `/api/*` to the backend, keeping the cookie first-party.
+- `vite preview` uses the same proxy, so the Playwright suite runs against a production build.
+- In production, `vercel.json` rewrites `/api/*` to the backend, keeping the cookie first-party. Vercel cannot read env vars inside `vercel.json`, so the backend host there is the placeholder `adventuro-backend.example.com`; replace it before deploying (also noted in `.env.example` and `README.md`).
 - Never put secrets in `VITE_` vars.
 
 ## Folder structure
@@ -43,13 +45,13 @@ Install everything at its latest stable version. Don't add a UI kit or a date li
 frontend/src/
 ├── main.jsx
 ├── App.jsx                    # providers: QueryClient, Theme, Router, Toaster
-├── router.jsx                 # route table, lazy pages, guards
+├── router.jsx                 # `routes` (lazy pages inside PageLayout, catch-all last) + createAppRouter()
 ├── styles/
 │   ├── index.css              # tailwind import, token mapping, base styles (per /design/tailwind-tokens.md)
 │   └── theme.css              # copy of /design/theme.css
 ├── api/
-│   ├── client.js              # fetch wrapper: credentials 'include', JSON, unwraps envelope, throws ApiError
-│   ├── ApiError.js            # { status, code, fieldErrors }
+│   ├── client.js              # request / requestBlob: credentials 'include', JSON, unwraps envelope, throws ApiError
+│   ├── ApiError.js            # { status, code, fieldErrors: [{ field }], isNetworkError }
 │   ├── queryKeys.js           # single query-key factory
 │   └── auth.api.js, users.api.js, verticals.api.js, tours.api.js, gear.api.js,
 │       taxonomies.api.js, bookings.api.js, search.api.js, newsletter.api.js
@@ -57,7 +59,8 @@ frontend/src/
 │   ├── queries/               # useMe, useVerticals, useVertical, useTours, useTour, useGearList,
 │   │                          # useTaxonomies, useMyBookings, useBooking, useSearch
 │   ├── mutations/             # useGoogleSignIn, useSignOut, useUpdateProfile, useCreateBooking, useSubscribe
-│   ├── useTheme.js
+│   ├── useTheme.js            # ThemeContext + useTheme()
+│   ├── useScrolled.js         # true once the page has left the top (navbar border)
 │   ├── useDebounce.js
 │   └── useUrlFilters.js       # read/write filters to URL search params
 ├── components/
@@ -65,13 +68,15 @@ frontend/src/
 │   │                          # Modal, Dropdown, Stepper, Skeleton, Spinner, Pagination,
 │   │                          # EmptyState, ErrorState, Price, SectionHeader
 │   ├── layout/                # PageLayout, Navbar, LogoMenu, AccountMenu, ThemeSwitcher,
-│   │                          # SearchOverlay, Footer, NewsletterForm
+│   │                          # SearchOverlay, Footer, FooterLinks, NewsletterForm,
+│   │                          # Wordmark, TerrainLine, RouteFallback, AppToaster
 │   ├── verticals/             # VerticalCard, VerticalHero
 │   ├── tours/                 # TourCard, TourGrid, TourHero, ItineraryTimeline, SignatureActivity,
 │   │                          # InclusionList, ReportingInfo, TierSelector
 │   ├── booking/               # BookingModal, BookingForm, TravelerStepper, PriceSummary, Ticket
 │   ├── gear/                  # GearCard, GearGrid, GearFilters, SuggestedGear, AffiliateDisclosure
 │   ├── auth/                  # GoogleSignInButton, RequireAuth, RequireCompleteProfile
+│   ├── ThemeProvider.jsx      # resolves the theme, sets data-theme, persists the choice
 │   └── QueryBoundary.jsx      # renders loading / error / empty / data for any query
 ├── pages/
 │   ├── HomePage.jsx
@@ -86,13 +91,23 @@ frontend/src/
 │   ├── AboutPage.jsx
 │   ├── StaticPage.jsx         # privacy, terms, cancellation, affiliate disclosure (content from lib/staticContent.js)
 │   └── NotFoundPage.jsx
-└── lib/
-    ├── errors.js              # getErrorMessage(err), getFieldError(err, field)
-    ├── format.js              # formatPrice (Intl en-IN INR, 0 decimals), formatDate (IST, "15 Sep 2026")
-    ├── constants.js           # VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME, limits
-    ├── schemas.js             # zod form schemas (profile, booking, newsletter)
-    └── storage.js             # safe localStorage/sessionStorage helpers (try/catch)
+├── lib/
+│   ├── errors.js              # getErrorMessage(err), getFieldError(err, field)
+│   ├── format.js              # formatPrice (Intl en-IN INR, 0 decimals), formatDate (IST, "15 Sep 2026"),
+│   │                          # getIstDateOnly(offsetDays) → 'YYYY-MM-DD'
+│   ├── constants.js           # ROUTES, VERTICALS meta (key, name, route, icon from /DESIGN.md), THEME,
+│   │                          # STORAGE_KEYS, LIMITS, BRAND, contact and social links
+│   ├── schemas.js             # zod form schemas (profile, booking, newsletter) + FIELD_MESSAGES
+│   ├── storage.js             # localStore / sessionStore: get, set, remove that never throw
+│   ├── queryClient.js         # createQueryClient(): staleTime, retry policy
+│   ├── menu.js                # arrow / Home / End navigation shared by Dropdown and LogoMenu
+│   └── cn.js                  # joins class names
+└── test/                      # setup.js, server.js (MSW + envelope helpers), render.jsx, matchMedia.js
+
+frontend/e2e/                  # Playwright specs; screenshots/ is gitignored
 ```
+
+Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 
 ## Component and code rules
 
@@ -109,7 +124,8 @@ frontend/src/
 
 ## Error messages — never show raw backend errors
 
-- `api/client.js` throws `ApiError { status, code, fieldErrors }`. **Never render `error.message` from the server, stack traces, or status numbers.**
+- `api/client.js` throws `ApiError { status, code, fieldErrors }`. It keeps only the field names of `errors[]` and drops the server's messages, so they cannot reach the UI. **Never render `error.message` from the server, stack traces, or status numbers.**
+- `request(path, { method, body, params, signal })` resolves to the envelope's `data`, with `meta` merged in beside it for paginated lists (`{ tours, meta }`). Empty params are not sent. A cancelled request rejects with the `AbortError`, not an `ApiError`.
 - `lib/errors.js#getErrorMessage(err)` resolves the text in this order:
   1. Known `code` → friendly text (the map below).
   2. Network failure → "We can't reach Adventuro right now. Check your connection and try again."
@@ -153,11 +169,14 @@ frontend/src/
   - **Signed in:** the source is `user.themePreference`. A change updates the UI optimistically, then `PATCH /users/me { themePreference }`. If the request fails, roll back and show a toast.
   - **Guest:** localStorage.
   - **On sign-in:** the server value wins.
-- Always mirror the resolved value to localStorage. A tiny inline script in `index.html` applies it before first paint so there's no flash.
+- Always mirror the **preference** to localStorage under `adventuro.theme` (`STORAGE_KEYS.THEME`), for guests and signed-in users alike. A tiny inline script in `index.html` reads it, resolves `system` with `matchMedia`, and sets `data-theme` before first paint so there's no flash. The key is written in both places; change them together.
+- `ThemeProvider` takes `onChange(next, previous)`, called when the user picks a theme: this is where the signed-in `PATCH` goes. `setPreference(value, { notify: false })` applies a value without calling it, for applying the server value on sign-in and for rolling back a failed save.
 
 ## Behavior requirements from the UI flow
 
-- **Logo menu:** opens on hover, focus, click, and tap. Closes on Escape, outside click, and route change. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
+- **Logo menu:** the wordmark is the home link; the chevron button beside it owns the menu. It opens on hover, keyboard focus, click, and tap. Closes on Escape, outside press, pointer leave, focus leaving, and route change. A mouse click never closes it (hovering already opened it); a tap toggles. Fully keyboard-navigable with proper ARIA (`aria-expanded`, `aria-haspopup`, menu roles).
+- **Navbar on phones:** below 640px the About Us link moves into the logo menu, and the wordmark steps down in size, so the bar fits from 360px wide.
+- **Static page paths** (in `ROUTES`): `/privacy-terms`, `/cancellation-refund`, `/affiliate-disclosure`.
 - **Search overlay:**
   - opens from the navbar icon and the `/` key
   - debounce 300 ms, minimum 2 chars
@@ -170,7 +189,7 @@ frontend/src/
   - on success, go to the ticket page
 - **Ticket page:** "Download PDF" requests `/bookings/:bookingNumber/ticket` as a blob and saves it as `Adventuro-{bookingNumber}.pdf`.
 - **Gear Buy:** an `<a href="/api/v1/gear/{id}/go" target="_blank" rel="noopener noreferrer sponsored">`. Show the affiliate disclosure on gear surfaces.
-- **Newsletter:** always shows the same success message ("You're on the list!"), whether the email is new or existing.
+- **Newsletter:** always shows the same success message ("You're on the list!", as a toast), whether the email is new or existing. Errors show inline under the field.
 - **Formatting:** prices via `formatPrice` (₹14,999), dates via `formatDate`, both from `lib/format.js` only.
 - **Accessibility:**
   - semantic HTML and labelled inputs
@@ -192,7 +211,9 @@ frontend/src/
 
 ## Testing
 
-- Vitest + React Testing Library, with MSW mocking the API using the real envelope shape.
+- Vitest + React Testing Library, with MSW mocking the API using the real envelope shape (`success()` / `failure()` in `src/test/server.js`). An unhandled request fails the test.
+- Render through `renderApp` / `renderRoutes` (`src/test/render.jsx`): they supply the query client, theme, an in-memory router and the toaster. `setSystemDark()` in `src/test/matchMedia.js` sets the OS colour scheme.
+- **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 375px and 1440px. It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4173), or reuses them if they are already running. Screenshots go to `e2e/screenshots/` (gitignored). First run on a machine: `npx playwright install chromium`.
 - Required tests:
   - `lib/errors.js`: every code, network, 5xx, field mapping
   - `lib/format.js`
