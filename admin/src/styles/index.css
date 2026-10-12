@@ -1,0 +1,177 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline reference {
+  /* Remove Tailwind's default palette, radii, shadows, and fonts so only our tokens exist. */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-subtle: var(--color-text-subtle);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-on-primary: var(--color-on-primary);
+  --color-brand: var(--color-brand);
+  --color-on-brand: var(--color-on-brand);
+  --color-brand-text: var(--color-brand-text);
+  --color-brand-tint: var(--color-brand-tint);
+  --color-accent: var(--color-accent);
+  --color-on-accent: var(--color-on-accent);
+  --color-accent-text: var(--color-accent-text);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-success: var(--color-success);
+  --color-success-tint: var(--color-success-tint);
+  --color-warning: var(--color-warning);
+  --color-warning-tint: var(--color-warning-tint);
+  --color-danger: var(--color-danger);
+  --color-danger-tint: var(--color-danger-tint);
+  --color-info: var(--color-info);
+  --color-info-tint: var(--color-info-tint);
+  --color-overlay: var(--color-overlay);
+  --color-focus-inner: var(--color-focus-inner);
+  --color-focus-outer: var(--color-focus-outer);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-serif: var(--font-serif);
+
+  --text-hero: var(--text-hero);
+  --text-h1: var(--text-h1);
+  --text-h2: var(--text-h2);
+  --text-h3: var(--text-h3);
+  --text-h4: var(--text-h4);
+  --text-lead: var(--text-lead);
+  --text-body-lg: var(--text-body-lg);
+  --text-body: var(--text-body);
+  --text-sm: var(--text-sm);
+  --text-xs: var(--text-xs);
+
+  --radius-plate: var(--radius-plate);
+  --radius-field: var(--radius-field);
+  --radius-panel: var(--radius-panel);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  --container-content: var(--container-content);
+  --container-prose: var(--container-prose);
+
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    line-height: var(--leading-body);
+    scrollbar-color: var(--color-border-strong) var(--color-bg);
+    accent-color: var(--color-accent-text);
+    caret-color: var(--color-accent-text);
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-inner);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--color-focus-outer);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility type-display {
+  font-family: var(--font-display);
+  font-stretch: var(--font-display-stretch);
+  font-weight: 900;
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
+@utility type-hero {
+  font-family: var(--font-display);
+  font-stretch: var(--font-display-stretch);
+  font-weight: 900;
+  font-size: var(--text-hero);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+}
+
+@utility type-lead {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lead);
+  line-height: 1.25;
+}
+
+@layer base {
+  body {
+    min-height: 100dvh;
+    font-size: var(--text-body);
+  }
+
+  button:not(:disabled),
+  select:not(:disabled),
+  [role='menuitem'] {
+    cursor: pointer;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@utility animate-fade-in {
+  animation: fade-in var(--duration-base) var(--ease-out) both;
+}
+
+@utility animate-rise-in {
+  animation: rise-in var(--duration-slow) var(--ease-out) both;
+}
+
+/* The navigation drawer sliding in from the left edge. */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@utility animate-slide-in {
+  animation: slide-in var(--duration-slow) var(--ease-out) both;
+}
