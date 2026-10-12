@@ -158,7 +158,7 @@ export function LogoMenu() {
           role="menu"
           aria-label="Verticals"
           onKeyDown={handleMenuKeys}
-          className="absolute top-full left-0 z-40 w-72 animate-menu-inrounded-panel border border-border bg-surface-raised p-2 shadow-raised"
+          className="absolute top-full left-0 z-40 w-72 animate-menu-in rounded-panel border border-border bg-surface-raised p-2 shadow-raised"
         >
           {VERTICALS.map(({ key, name, icon: Icon, route }) => (
             <li key={key} role="none">

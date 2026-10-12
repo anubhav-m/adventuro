@@ -70,7 +70,7 @@ export function Dropdown({ label, items, trigger, header, align = 'end' }) {
       {open && (
         <div
           className={cn(
-            'absolute top-full z-40 mt-2 min-w-48 animate-menu-inrounded-panel border border-border bg-surface-raised p-2 shadow-raised',
+            'absolute top-full z-40 mt-2 min-w-48 animate-menu-in rounded-panel border border-border bg-surface-raised p-2 shadow-raised',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
