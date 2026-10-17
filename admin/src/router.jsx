@@ -29,6 +29,37 @@ export const routes = [
                 index: true,
                 ...page(() => import('./pages/DashboardPage.jsx'), 'DashboardPage'),
               },
+              {
+                path: 'verticals',
+                ...page(() => import('./pages/VerticalsPage.jsx'), 'VerticalsPage'),
+              },
+              {
+                path: 'verticals/:id',
+                ...page(() => import('./pages/VerticalEditPage.jsx'), 'VerticalEditPage'),
+              },
+              { path: 'tours', ...page(() => import('./pages/ToursPage.jsx'), 'ToursPage') },
+              // New and edit share one page; the static segment wins over `:id`.
+              {
+                path: 'tours/new',
+                ...page(() => import('./pages/TourEditPage.jsx'), 'TourEditPage'),
+              },
+              {
+                path: 'tours/:id',
+                ...page(() => import('./pages/TourEditPage.jsx'), 'TourEditPage'),
+              },
+              { path: 'gear', ...page(() => import('./pages/GearPage.jsx'), 'GearPage') },
+              {
+                path: 'gear/new',
+                ...page(() => import('./pages/GearEditPage.jsx'), 'GearEditPage'),
+              },
+              {
+                path: 'gear/:id',
+                ...page(() => import('./pages/GearEditPage.jsx'), 'GearEditPage'),
+              },
+              {
+                path: 'taxonomies',
+                ...page(() => import('./pages/TaxonomiesPage.jsx'), 'TaxonomiesPage'),
+              },
               { path: '*', ...page(() => import('./pages/NotFoundPage.jsx'), 'NotFoundPage') },
             ],
           },

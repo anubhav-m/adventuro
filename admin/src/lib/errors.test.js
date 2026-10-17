@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ApiError, forbiddenError, NETWORK_ERROR } from '../api/ApiError.js';
 import {
+  applyFieldErrors,
+  clientError,
+  DUPLICATE_SLUG_MESSAGE,
   ERROR_MESSAGES,
   ERROR_SUBJECT,
   FALLBACK_MESSAGE,
@@ -118,5 +121,76 @@ describe('getFieldError', () => {
     expect(getFieldError(error, 'to')).toBeUndefined();
     expect(getFieldError(null, 'from')).toBeUndefined();
     expect(getFieldError(new Error('boom'), 'from')).toBeUndefined();
+  });
+});
+
+describe('getFieldError with list positions', () => {
+  it('reads the wording of any position in a list', () => {
+    const error = new ApiError({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      fieldErrors: [{ field: 'tiers.3.name' }, { field: 'gallery.0' }],
+    });
+
+    expect(getFieldError(error, 'tiers.3.name')).toBe(FIELD_MESSAGES['tiers.*.name']);
+    expect(getFieldError(error, 'gallery.0')).toBe(FIELD_MESSAGES['gallery.*']);
+  });
+});
+
+describe('applyFieldErrors', () => {
+  it('puts every rejected field on the form, in our words', () => {
+    const setError = vi.fn();
+    const error = new ApiError({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      fieldErrors: [
+        { field: 'reporting.time' },
+        { field: 'tiers.1.pricePerPerson' },
+        { field: '' },
+      ],
+    });
+
+    expect(applyFieldErrors(error, setError)).toBe(true);
+    expect(setError.mock.calls).toEqual([
+      ['reporting.time', { type: 'server', message: FIELD_MESSAGES['reporting.time'] }],
+      [
+        'tiers.1.pricePerPerson',
+        { type: 'server', message: FIELD_MESSAGES['tiers.*.pricePerPerson'] },
+      ],
+    ]);
+  });
+
+  it('marks the slug on a DUPLICATE', () => {
+    const setError = vi.fn();
+
+    expect(applyFieldErrors(new ApiError({ status: 409, code: 'DUPLICATE' }), setError)).toBe(true);
+    expect(setError).toHaveBeenCalledWith('slug', {
+      type: 'server',
+      message: DUPLICATE_SLUG_MESSAGE,
+    });
+  });
+
+  it('marks nothing for an error without fields, or one that is not from the API', () => {
+    const setError = vi.fn();
+
+    expect(applyFieldErrors(new ApiError({ status: 500, code: 'INTERNAL_ERROR' }), setError)).toBe(
+      false,
+    );
+    expect(applyFieldErrors(new Error('boom'), setError)).toBe(false);
+    expect(setError).not.toHaveBeenCalled();
+  });
+});
+
+describe('clientError and subjects', () => {
+  it('words a check the app makes itself like the server code it stands for', () => {
+    expect(getErrorMessage(clientError('FILE_TOO_LARGE'))).toBe(ERROR_MESSAGES.FILE_TOO_LARGE);
+  });
+
+  it('words RESOURCE_IN_USE for a taxonomy', () => {
+    expect(
+      getErrorMessage(new ApiError({ status: 409, code: 'RESOURCE_IN_USE' }), {
+        subject: ERROR_SUBJECT.TAXONOMY,
+      }),
+    ).toBe('Some gear still uses this, so it can’t be deleted. Take it off that gear first.');
   });
 });

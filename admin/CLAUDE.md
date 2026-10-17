@@ -17,7 +17,7 @@ Visual design is decided. Read `/DESIGN.md`, especially its **Admin app** sectio
 - Google Identity Services, loaded directly, same as the customer app
 - Dev tools: Vitest (+ `@vitest/coverage-v8`), React Testing Library, MSW, jsdom, Playwright (`@playwright/test`, Chromium) with `@axe-core/playwright`, ESLint (flat config + react-hooks), Prettier
 
-Install everything at its latest stable version. `react-hook-form` and `@hookform/resolvers` are not installed yet: nothing uses them until the editors of session 13, which adds them.
+Install everything at its latest stable version.
 
 ## Scripts
 
@@ -32,7 +32,7 @@ Install everything at its latest stable version. `react-hook-form` and `@hookfor
 
 ## Folder structure
 
-Items marked (13) or (14) are built in that session and do not exist yet.
+Items marked (14) are built in that session and do not exist yet.
 
 ```
 admin/src/
@@ -43,12 +43,17 @@ admin/src/
 │   └── auth.api.js (also updateMe, for the theme), dashboard.api.js, verticals.api.js, tours.api.js,
 │       gear.api.js, taxonomies.api.js, uploads.api.js, bookings.api.js, users.api.js, newsletter.api.js
 ├── hooks/
-│   ├── queries/ (useMe, useDashboard), mutations/ (useGoogleSignIn, useSignOut, useUpdateProfile)
+│   ├── queries/ (useMe, useDashboard, useVerticals, useTours (+ useAllTours), useGear, useTaxonomies)
+│   ├── mutations/ (useGoogleSignIn, useSignOut, useUpdateProfile, useVerticalMutations,
+│   │               useTourMutations, useGearMutations, useTaxonomyMutations, useUploadMutations)
 │   ├── useAdminSession.js      # the session as this app sees it: loading | error | signedOut | admin
-│   └── useUrlFilters.js, useDebounce.js, useTheme.js, useUnsavedChanges.js (13)
+│   ├── useEditorForm.js        # one editor's form + uploads + unsaved guard + save (see Form behavior)
+│   ├── useUnsavedChanges.js, useUploadSession.js, useAutoSlug.js, useListKeys.js
+│   └── useUrlFilters.js, useDebounce.js, useTheme.js
 ├── components/
-│   ├── ui/          # Button, IconButton (button or link), Input, Textarea, Select, MultiSelect, Field,
-│   │                # Checkbox, Switch, Segmented, Badge, VerticalChip, Card, Avatar,
+│   ├── ui/          # Button, IconButton (button or link), Input, Textarea, Select, MultiSelect, Field
+│   │                # (+ FieldError), MoneyInput, Checkbox, Switch, Segmented, Badge, VerticalChip, Card,
+│   │                # Avatar, Thumbnail,
 │   │                # Modal (center | left), ConfirmDialog, Tabs, Skeleton, SkeletonText, Spinner,
 │   │                # EmptyState, ErrorState, InlineError, Pagination
 │   ├── layout/      # AdminLayout, Sidebar (column from 1024px, drawer below), SidebarNav, Topbar,
@@ -57,21 +62,30 @@ admin/src/
 │   │                # TrendChart, CategoryChart, ChartTooltip, chartStyle.js
 │   ├── dashboard/   # DateRangePicker, DashboardStats, DailyCharts, BreakdownCharts, DashboardTables,
 │   │                # DashboardSection, DashboardSkeleton
-│   ├── forms/       # (13) ImageUploader, ImageGallery, StringListEditor (inclusions/activities),
-│   │                # ItineraryEditor, TierEditor, TaxonomySelect, TourMultiSelect, PriceInputs
+│   ├── forms/       # ImageUploader, ImageGallery, StringListEditor (inclusions/activities),
+│   │                # ItineraryEditor, TierEditor, TaxonomySelect, TourMultiSelect, PriceInputs,
+│   │                # ListRowActions, ListField, FormSection, FormStatus, SaveButton,
+│   │                # UnsavedChangesDialog, EditorLoader
+│   ├── tours/       # TourForm (+ one *Fields component per tab), TourLinkedGear, ToursTable,
+│   │                # TourDeleteDialog
+│   ├── gear/        # GearForm, GearDetailsFields, GearSellingFields, GearGroupingFields, GearTable,
+│   │                # GearDeleteDialog
+│   ├── verticals/   # VerticalForm
+│   ├── taxonomies/  # TaxonomyPanel, TaxonomyAddForm
 │   ├── auth/        # GoogleSignInButton, RequireAdmin, SessionBoundary
 │   ├── ThemeProvider.jsx, SessionThemeProvider.jsx, ThemeSync.jsx
 │   └── QueryBoundary.jsx
 ├── pages/
 │   ├── LoginPage.jsx, DashboardPage.jsx, NotFoundPage.jsx
-│   ├── (13) VerticalsPage, VerticalEditPage
-│   ├── (13) ToursPage, TourEditPage             # /tours/new and /tours/:id share TourEditPage
-│   ├── (13) GearPage, GearEditPage              # /gear/new and /gear/:id share GearEditPage
-│   ├── (13) TaxonomiesPage
+│   ├── VerticalsPage, VerticalEditPage
+│   ├── ToursPage, TourEditPage             # /tours/new and /tours/:id share TourEditPage
+│   ├── GearPage, GearEditPage              # /gear/new and /gear/:id share GearEditPage
+│   ├── TaxonomiesPage
 │   └── (14) BookingsPage, BookingDetailPage, UsersPage, UserDetailPage, NewsletterPage
 ├── lib/ (errors.js, format.js, constants.js, schemas.js, storage.js, dashboardRange.js,
-│        queryClient.js, googleIdentity.js, cn.js, csv.js (14))
-└── test/ (setup.js, server.js, render.jsx, matchMedia.js, googleIdentity.js, fixtures.js)
+│        queryClient.js, googleIdentity.js, cn.js, tourForm.js, gearForm.js, listParams.js,
+│        slugify.js, list.js, csv.js (14))
+└── test/ (setup.js, server.js, render.jsx, matchMedia.js, googleIdentity.js, fixtures.js, contentApi.js)
 
 admin/e2e/           # Playwright specs + fixtures.js; screenshots/ is gitignored
 ```
@@ -85,7 +99,7 @@ admin/e2e/           # Playwright specs + fixtures.js; screenshots/ is gitignore
 - **Charts** (recharts): `TrendChart` (one figure per day, as a line or bars, in `--color-text`) and `CategoryChart` (one named bar per category, each in its own ink). Colours come only from `chartStyle.js`, `VERTICAL_INKS` and `BOOKING_STATUS[…].ink`, all CSS variables, so both themes work without script. Every chart sits in a `ChartCard`, which hides the drawing from assistive technology and gives the same figures as a visually hidden table (`columns`, `rows`). `empty` replaces an all-zero chart with a line of text.
 - **VerticalChip** is the only way a vertical is shown. A status is a **Badge** with `BOOKING_STATUS[status]`.
 - **Tabs** keeps every panel mounted (hidden while closed) so one form can run across them. `flagged` marks a tab that needs attention.
-- **Switch** applies as it is pressed (Published, Active). **ConfirmDialog** stays open and cannot be dismissed while `loading`, and shows `error` inside itself.
+- **Switch** applies as it is pressed in a table row (Published, Active). Inside an editor it is one of the form's values and saves with Save. **ConfirmDialog** stays open and cannot be dismissed while `loading`, and shows `error` inside itself.
 - **PageHeader** renders the page's only `h1` and sets the document title (`{title} · Adventuro Admin`).
 - **Density** (from `/DESIGN.md`): controls 40px, table rows 44px, `text-sm` in tables and forms, 24px page padding.
 
@@ -203,12 +217,20 @@ How it is built:
 
 ## Form behavior
 
-- Validate on the client with zod (mirroring backend limits). Disable Save while submitting or when nothing has changed.
+- Validate on the client with zod (mirroring backend limits, in `lib/schemas.js`, whose `FIELD_MESSAGES` hold every field's wording). Disable Save while submitting or when nothing has changed.
+- Every editor page uses `useEditorForm({ schema, defaultValues, save, toFormValues, onSaved })`: react-hook-form + zodResolver, the upload session, the unsaved-changes guard, and the save. After a save the form is reset to the saved document (clean again); a new document then moves to its own page, calling `allowNavigation()` first. The Save button sits in the page header, tied to the form by its `form` id.
+- A failed save goes through `applyFieldErrors`: each server field (`tiers.1.name`, `reporting.time`) is set on the form in our words (`*` in a `FIELD_MESSAGES` key stands for any list position); a `DUPLICATE` marks the slug. The top of the form (`FormStatus`) shows the error, or VALIDATION_ERROR's text when the client schema refused.
+- Number fields are `''` until entered, never NaN (NaN never compares equal, so the form would always look changed).
+- List editors (`StringListEditor`, `ItineraryEditor`, `TierEditor`, `ImageGallery`) are controlled (`value`, `onChange`, `error` = the form's error for the list) and sit in a `Controller` / `ListField`. Rows get stable keys from `useListKeys`. Itinerary days are renumbered on every change; a saved tier keeps its `id` (create sends none).
+- Slugs follow the title/name on a new document until edited (`useAutoSlug`); a saved document's slug never changes by itself.
+- The tour editor's tabs are `TOUR_TABS` in `lib/tourForm.js`, each listing its form fields. A tab with an error is flagged, and a refused save opens the first flagged tab unless the open one is flagged. The open tab is `?tab=` (Basics is left out); the Taxonomies page keeps its list in `?type=`.
 - `useUnsavedChanges` blocks navigation (router blocker + `beforeunload`) when the form is dirty.
 - **`ImageUploader`:**
   1. Checks type (jpeg/png/webp) and size (≤ 5 MB) client-side.
   2. `POST /admin/uploads?folder=…` and shows a preview.
-  3. Removing an image that was uploaded during this session but not yet saved calls `DELETE /admin/uploads { path }`.
+  3. Removing or replacing an image that was uploaded during this session but not yet saved calls `DELETE /admin/uploads { path }`. `useUploadSession` tracks those paths; `commit()` runs after a save, and leaving the page unsaved deletes whatever is still pending.
+- A tour delete refused with `RESOURCE_IN_USE` turns its dialog into "Unpublish instead" (or, for a draft, an explanation). A taxonomy delete refused that way shows `ERROR_SUBJECT.TAXONOMY`'s wording inside the dialog.
+- `TourMultiSelect` loads every tour (`useAllTours`, pages of 50) and filters locally. List search sends `q` only from 2 characters (`toListParams`).
 - Show success toasts after a save. Show errors inline at the top of the form, with field errors on their fields.
 - Destructive actions always go through `ConfirmDialog`, naming the item.
 
@@ -229,13 +251,18 @@ How it is built:
 - **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 768px (tablet) and 1440px (desktop). It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4174), or reuses them if they are already running. Stop a dev backend on port 5000 first, or the suite runs against the dev database. First run on a machine: `npx playwright install chromium`.
 - **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It gives every test its own `X-Forwarded-For` and `signInAs('admin' | 'customer')`, which injects that user's cookie from `/e2e/.auth.json`. `open(page, path, theme)` waits until nothing is loading. `watchForErrors` ignores only the browser's own report of the 401 from `GET /auth/me`. `findA11yViolations` runs axe (WCAG 2.1 A and AA) and returns the serious and critical violations.
 - Every test shares the one harness admin, so a spec must not really change that user (its theme, say). Answer the save with `page.route` instead, as the theme test in `dashboard.spec.js` does.
+- `content.spec.js` uploads to the **real Supabase dev bucket** from `backend/.env` (`makePng()` in the fixtures makes the file). It runs serially per project with unique names, deletes what it created (also in `afterAll`, through `adminApi()`), and checks deleted images with a cache-busting query, because uploads are cached by the CDN for a year. The unpublish-instead test uses a different demo tour per project and publishes it again at the end.
+- Unit tests: `serveContentLists()` (`src/test/contentApi.js`) answers verticals, taxonomies, tours and gear. Register it in `beforeEach` so a test's own handlers, added later, win. A test that leaves an unsaved upload must unmount and await its clean-up DELETE, or the request lands in the next test.
+- Stop whatever listens on ports 4174 and 5000 before a run that must use a new build: Playwright reuses it.
 - Required tests:
   - `lib/errors.js` mapping
   - `lib/csv.js` (escaping + formula-injection guard)
   - `RequireAdmin` (401, non-admin, admin)
-  - `TierEditor` and `ItineraryEditor` (add, remove, reorder, renumber)
-  - `ImageUploader` client-side rejection
+  - every form editor component (add, remove, reorder, renumber; errors per row)
+  - `ImageUploader` client-side rejection, and DELETE for a removed unsaved upload
+  - tour form validation and tab badges; server field errors mapped onto fields
   - gear form sale ≤ MRP and https-URL validation
+  - the unsaved-changes blocker; delete flows including RESOURCE_IN_USE → unpublish
   - booking status actions only shown for `confirmed`
 
 ## Definition of done

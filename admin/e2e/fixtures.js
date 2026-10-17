@@ -1,11 +1,15 @@
 import { randomInt } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { crc32, deflateSync } from 'node:zlib';
 import { AxeBuilder } from '@axe-core/playwright';
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, request as playwrightRequest } from '@playwright/test';
 
 // Written by the backend harness on start: { customer, incompleteCustomer, admin } session tokens.
 const AUTH_FILE = new URL('../../e2e/.auth.json', import.meta.url);
 const SESSION_COOKIE = 'adv_session';
+const APP_URL = 'http://localhost:4174';
+
+const readSessionTokens = async () => JSON.parse(await readFile(AUTH_FILE, 'utf8'));
 
 export const THEMES = ['dark', 'light'];
 
@@ -22,7 +26,7 @@ export const test = base.extend({
   // signInAs('admin') puts that harness user's session cookie in the browser.
   signInAs: async ({ context, baseURL }, provide) => {
     await provide(async (name) => {
-      const tokens = JSON.parse(await readFile(AUTH_FILE, 'utf8'));
+      const tokens = await readSessionTokens();
       await context.addCookies([{ name: SESSION_COOKIE, value: tokens[name], url: baseURL }]);
     });
   },
@@ -96,4 +100,47 @@ export const findA11yViolations = async (page) => {
   return violations
     .filter(({ impact }) => BLOCKING.includes(impact))
     .map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(' ')).join(' | ')}`);
+};
+
+// The admin API with the harness admin's session, outside any page: for setup and clean-up.
+// Dispose of it when done.
+export const adminApi = async () => {
+  const tokens = await readSessionTokens();
+  return playwrightRequest.newContext({
+    baseURL: APP_URL,
+    extraHTTPHeaders: {
+      cookie: `${SESSION_COOKIE}=${tokens.admin}`,
+      'x-forwarded-for': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
+    },
+  });
+};
+
+const pngChunk = (type, data) => {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length);
+  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+  const checksum = Buffer.alloc(4);
+  checksum.writeUInt32BE(crc32(body));
+  return Buffer.concat([length, body, checksum]);
+};
+
+// A real PNG of one flat colour, made in memory, for the upload tests.
+export const makePng = ({ width = 60, height = 40, rgb = [31, 88, 242] } = {}) => {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8; // bits per channel
+  header[9] = 2; // truecolour RGB
+  // Each row starts with filter type 0, then one RGB triple per pixel.
+  const row = Buffer.concat([
+    Buffer.from([0]),
+    ...Array.from({ length: width }, () => Buffer.from(rgb)),
+  ]);
+  const pixels = Buffer.concat(Array.from({ length: height }, () => row));
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk('IHDR', header),
+    pngChunk('IDAT', deflateSync(pixels)),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
 };

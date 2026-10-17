@@ -4,7 +4,8 @@ import { Modal } from './Modal.jsx';
 
 // The one way to ask before a destructive or irreversible action. The title names the item
 // ("Delete Goa Coastal Escape?"), and the confirm button says what will happen ("Delete").
-// While `loading` the dialog stays open and cannot be dismissed; `error` shows inside it.
+// While `loading` the dialog stays open and cannot be dismissed; `error` shows inside it, in
+// the wording of `errorSubject` when given (see lib/errors.js).
 export function ConfirmDialog({
   open,
   title,
@@ -13,6 +14,7 @@ export function ConfirmDialog({
   tone = 'danger',
   loading = false,
   error,
+  errorSubject,
   onConfirm,
   onCancel,
   children,
@@ -43,7 +45,7 @@ export function ConfirmDialog({
     >
       <div className="flex flex-col gap-3 text-text-muted">
         {children}
-        {error && <InlineError error={error} />}
+        {error && <InlineError error={error} subject={errorSubject} />}
       </div>
     </Modal>
   );

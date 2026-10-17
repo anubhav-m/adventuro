@@ -31,11 +31,15 @@ export const ERROR_MESSAGES = Object.freeze({
 });
 
 // What the error was about, when that changes the wording of a code.
-export const ERROR_SUBJECT = Object.freeze({ TOUR: 'tour' });
+export const ERROR_SUBJECT = Object.freeze({ TOUR: 'tour', TAXONOMY: 'taxonomy' });
 
 const SUBJECT_MESSAGES = Object.freeze({
   [ERROR_SUBJECT.TOUR]: Object.freeze({
     RESOURCE_IN_USE: 'This tour has bookings — unpublish it instead.',
+  }),
+  [ERROR_SUBJECT.TAXONOMY]: Object.freeze({
+    RESOURCE_IN_USE:
+      'Some gear still uses this, so it can’t be deleted. Take it off that gear first.',
   }),
 });
 
@@ -51,9 +55,37 @@ export const getErrorMessage = (error, { subject } = {}) => {
   return FALLBACK_MESSAGE;
 };
 
+// Our wording for a field path, where a position in a list may stand for any: 'tiers.2.name'
+// reads the message of 'tiers.*.name'.
+const fieldMessage = (field) =>
+  FIELD_MESSAGES[field] ??
+  FIELD_MESSAGES[field.replace(/\.\d+(?=\.|$)/g, '.*')] ??
+  FIELD_FALLBACK_MESSAGE;
+
 // Our own message for a field the server rejected, or undefined if it did not reject that field.
 export const getFieldError = (error, field) => {
   if (!(error instanceof ApiError)) return undefined;
   if (!error.fieldErrors.some((fieldError) => fieldError.field === field)) return undefined;
-  return FIELD_MESSAGES[field] ?? FIELD_FALLBACK_MESSAGE;
+  return fieldMessage(field);
 };
+
+export const DUPLICATE_SLUG_MESSAGE = 'Another item already uses this slug. Try a different one.';
+
+// Puts each field the server rejected onto the form's own field, in our wording. A DUPLICATE
+// is a clash on the slug, the only unique field the editors send. Returns true when any field
+// was marked.
+export const applyFieldErrors = (error, setError) => {
+  if (!(error instanceof ApiError)) return false;
+  if (error.code === 'DUPLICATE') {
+    setError('slug', { type: 'server', message: DUPLICATE_SLUG_MESSAGE });
+    return true;
+  }
+  for (const { field } of error.fieldErrors) {
+    if (field) setError(field, { type: 'server', message: fieldMessage(field) });
+  }
+  return error.fieldErrors.some(({ field }) => field);
+};
+
+// An error the app raises itself, for a check it makes before asking the server (an image
+// that is too large, say), so its text comes from the same map.
+export const clientError = (code) => new ApiError({ code });

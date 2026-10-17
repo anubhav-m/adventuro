@@ -16,22 +16,27 @@ export function Field({ label, error, hint, hideLabel = false, className, childr
         {label}
       </label>
       {children({ id, 'aria-invalid': error ? true : undefined, 'aria-describedby': describedBy })}
-      {error && (
-        <p id={errorId} role="alert" className="flex items-start gap-1.5 text-xs font-medium">
-          <CircleAlert
-            size={16}
-            strokeWidth={1.75}
-            aria-hidden="true"
-            className="mt-px shrink-0 text-danger"
-          />
-          <span className="text-danger">{error}</span>
-        </p>
-      )}
+      {error && <FieldError id={errorId}>{error}</FieldError>}
       {!error && hint && (
         <p id={hintId} className="text-xs font-medium text-text-muted">
           {hint}
         </p>
       )}
     </div>
+  );
+}
+
+// A field's message in our own words, also used under a group of fields (a list, a pair).
+export function FieldError({ id, children }) {
+  return (
+    <p id={id} role="alert" className="flex items-start gap-1.5 text-xs font-medium">
+      <CircleAlert
+        size={16}
+        strokeWidth={1.75}
+        aria-hidden="true"
+        className="mt-px shrink-0 text-danger"
+      />
+      <span className="text-danger">{children}</span>
+    </p>
   );
 }

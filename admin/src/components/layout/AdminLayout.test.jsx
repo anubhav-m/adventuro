@@ -4,6 +4,7 @@ import { http } from 'msw';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createQueryClient } from '../../lib/queryClient.js';
 import { routes } from '../../router.jsx';
+import { serveContentLists } from '../../test/contentApi.js';
 import { ADMIN, EMPTY_DASHBOARD } from '../../test/fixtures.js';
 import { installGoogleIdentity } from '../../test/googleIdentity.js';
 import { currentUrl, renderRoutes } from '../../test/render.jsx';
@@ -19,6 +20,12 @@ beforeAll(
       import('../../pages/DashboardPage.jsx'),
       import('../../pages/LoginPage.jsx'),
       import('../../pages/NotFoundPage.jsx'),
+      import('../../pages/VerticalsPage.jsx'),
+      import('../../pages/ToursPage.jsx'),
+      import('../../pages/TourEditPage.jsx'),
+      import('../../pages/GearPage.jsx'),
+      import('../../pages/GearEditPage.jsx'),
+      import('../../pages/TaxonomiesPage.jsx'),
     ]),
   60_000,
 );
@@ -53,8 +60,38 @@ describe('AdminLayout', () => {
     const nav = within(sidebar()).getByRole('navigation', { name: 'Sections' });
     const links = within(nav).getAllByRole('link');
 
-    expect(links.map((link) => link.textContent)).toEqual(['Dashboard']);
+    expect(links.map((link) => link.textContent)).toEqual([
+      'Dashboard',
+      'Verticals',
+      'Tours',
+      'Gear',
+      'Taxonomies',
+    ]);
     expect(links[0]).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('reaches every content section from the sidebar, and each one’s new-item page', async () => {
+    serveContentLists();
+    const { user, router } = await setup();
+    const nav = () => within(sidebar()).getByRole('navigation', { name: 'Sections' });
+
+    for (const section of ['Verticals', 'Tours', 'Gear', 'Taxonomies']) {
+      await user.click(within(nav()).getByRole('link', { name: section }));
+      expect(await screen.findByRole('heading', { level: 1, name: section })).toBeInTheDocument();
+      expect(within(nav()).getByRole('link', { name: section })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+    }
+
+    await user.click(within(nav()).getByRole('link', { name: 'Tours' }));
+    await user.click(await screen.findByRole('link', { name: 'New tour' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'New tour' })).toBeInTheDocument();
+    expect(currentUrl(router)).toBe('/tours/new');
+
+    await user.click(within(nav()).getByRole('link', { name: 'Gear' }));
+    await user.click(await screen.findByRole('link', { name: 'New gear' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'New gear' })).toBeInTheDocument();
   });
 
   it('does not mark the dashboard as current on another path', async () => {
