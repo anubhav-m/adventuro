@@ -60,6 +60,23 @@ export const routes = [
                 path: 'taxonomies',
                 ...page(() => import('./pages/TaxonomiesPage.jsx'), 'TaxonomiesPage'),
               },
+              {
+                path: 'bookings',
+                ...page(() => import('./pages/BookingsPage.jsx'), 'BookingsPage'),
+              },
+              {
+                path: 'bookings/:bookingNumber',
+                ...page(() => import('./pages/BookingDetailPage.jsx'), 'BookingDetailPage'),
+              },
+              { path: 'users', ...page(() => import('./pages/UsersPage.jsx'), 'UsersPage') },
+              {
+                path: 'users/:id',
+                ...page(() => import('./pages/UserDetailPage.jsx'), 'UserDetailPage'),
+              },
+              {
+                path: 'newsletter',
+                ...page(() => import('./pages/NewsletterPage.jsx'), 'NewsletterPage'),
+              },
               { path: '*', ...page(() => import('./pages/NotFoundPage.jsx'), 'NotFoundPage') },
             ],
           },

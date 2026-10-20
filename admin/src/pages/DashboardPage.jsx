@@ -47,6 +47,7 @@ export function DashboardPage() {
                 bookingsByStatus={data.bookingsByStatus}
               />
               <DashboardTables
+                range={data.range}
                 topTours={data.topTours}
                 topGear={data.topGear}
                 recentBookings={data.recentBookings}

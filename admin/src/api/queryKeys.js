@@ -1,6 +1,9 @@
 export const queryKeys = {
   me: ['me'],
-  dashboard: (range) => ['dashboard', range],
+  dashboard: {
+    all: ['dashboard'],
+    range: (range) => ['dashboard', range],
+  },
   verticals: {
     all: ['verticals'],
     detail: (id) => ['verticals', 'detail', id],

@@ -20,6 +20,11 @@ const ADMIN_ROUTES = [
   '/gear/new',
   '/taxonomies',
   '/taxonomies?type=tag',
+  '/bookings',
+  '/bookings?from=2026-10-31&to=2026-10-01',
+  '/users',
+  '/users?role=admin',
+  '/newsletter',
 ];
 
 const TOUR_TABS = [

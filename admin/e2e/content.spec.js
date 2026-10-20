@@ -162,13 +162,11 @@ test('gear linked to the tour shows on the tour in the store', async ({ page }, 
 
   await page.getByRole('textbox', { name: 'Name' }).fill(name);
   await page.getByRole('textbox', { name: 'Short description' }).fill('Packable rain shell');
-  await page
-    .getByLabel('Add to images: choose a file')
-    .setInputFiles({
-      name: 'shell.png',
-      mimeType: 'image/png',
-      buffer: makePng({ rgb: [20, 115, 78] }),
-    });
+  await page.getByLabel('Add to images: choose a file').setInputFiles({
+    name: 'shell.png',
+    mimeType: 'image/png',
+    buffer: makePng({ rgb: [20, 115, 78] }),
+  });
   await expect(page.getByRole('listitem', { name: 'Image 1 of 1' })).toBeVisible();
   await page.getByRole('spinbutton', { name: 'MRP' }).fill('4999');
   await page.getByRole('spinbutton', { name: 'Sale price' }).fill('5999');

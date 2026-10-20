@@ -6,6 +6,7 @@ import { createQueryClient } from '../../lib/queryClient.js';
 import { routes } from '../../router.jsx';
 import { serveContentLists } from '../../test/contentApi.js';
 import { ADMIN, EMPTY_DASHBOARD } from '../../test/fixtures.js';
+import { serveOpsLists } from '../../test/opsApi.js';
 import { installGoogleIdentity } from '../../test/googleIdentity.js';
 import { currentUrl, renderRoutes } from '../../test/render.jsx';
 import { api, failure, record, server, signedInAs, success } from '../../test/server.js';
@@ -26,6 +27,9 @@ beforeAll(
       import('../../pages/GearPage.jsx'),
       import('../../pages/GearEditPage.jsx'),
       import('../../pages/TaxonomiesPage.jsx'),
+      import('../../pages/BookingsPage.jsx'),
+      import('../../pages/UsersPage.jsx'),
+      import('../../pages/NewsletterPage.jsx'),
     ]),
   60_000,
 );
@@ -66,16 +70,28 @@ describe('AdminLayout', () => {
       'Tours',
       'Gear',
       'Taxonomies',
+      'Bookings',
+      'Users',
+      'Newsletter',
     ]);
     expect(links[0]).toHaveAttribute('aria-current', 'page');
   });
 
-  it('reaches every content section from the sidebar, and each one’s new-item page', async () => {
+  it('reaches every section from the sidebar, and each content section’s new-item page', async () => {
     serveContentLists();
+    serveOpsLists();
     const { user, router } = await setup();
     const nav = () => within(sidebar()).getByRole('navigation', { name: 'Sections' });
 
-    for (const section of ['Verticals', 'Tours', 'Gear', 'Taxonomies']) {
+    for (const section of [
+      'Verticals',
+      'Tours',
+      'Gear',
+      'Taxonomies',
+      'Bookings',
+      'Users',
+      'Newsletter',
+    ]) {
       await user.click(within(nav()).getByRole('link', { name: section }));
       expect(await screen.findByRole('heading', { level: 1, name: section })).toBeInTheDocument();
       expect(within(nav()).getByRole('link', { name: section })).toHaveAttribute(

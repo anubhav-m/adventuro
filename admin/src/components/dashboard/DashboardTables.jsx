@@ -1,14 +1,20 @@
-import { BOOKING_STATUS } from '../../lib/constants.js';
+import { bookingPath, tourBookingsPath } from '../../lib/constants.js';
 import { formatDateTime, formatNumber, formatPrice } from '../../lib/format.js';
+import { BookingStatusBadge } from '../bookings/BookingStatusBadge.jsx';
 import { DataTable } from '../data/DataTable.jsx';
-import { Badge } from '../ui/Badge.jsx';
+import { TextLink } from '../ui/TextLink.jsx';
 import { VerticalChip } from '../ui/VerticalChip.jsx';
 import { DashboardSection } from './DashboardSection.jsx';
 
 const NOWRAP = 'whitespace-nowrap';
 
-const TOP_TOUR_COLUMNS = [
-  { key: 'title', header: 'Tour' },
+// A top tour opens the bookings list for that tour, over the same days.
+const topTourColumns = (range) => [
+  {
+    key: 'title',
+    header: 'Tour',
+    render: (row) => <TextLink to={tourBookingsPath(row.tourId, range)}>{row.title}</TextLink>,
+  },
   {
     key: 'bookings',
     header: 'Bookings',
@@ -32,7 +38,8 @@ const RECENT_BOOKING_COLUMNS = [
   {
     key: 'bookingNumber',
     header: 'Booking',
-    className: `${NOWRAP} font-bold tabular-nums`,
+    className: `${NOWRAP} tabular-nums`,
+    render: (row) => <TextLink to={bookingPath(row.bookingNumber)}>{row.bookingNumber}</TextLink>,
   },
   { key: 'customer', header: 'Customer', className: NOWRAP, render: (row) => row.contact.name },
   { key: 'tour', header: 'Tour', className: 'min-w-44', render: (row) => row.snapshot.tourTitle },
@@ -51,9 +58,7 @@ const RECENT_BOOKING_COLUMNS = [
   {
     key: 'status',
     header: 'Status',
-    render: (row) => (
-      <Badge tone={BOOKING_STATUS[row.status].tone}>{BOOKING_STATUS[row.status].label}</Badge>
-    ),
+    render: (row) => <BookingStatusBadge status={row.status} />,
   },
   {
     key: 'createdAt',
@@ -64,14 +69,15 @@ const RECENT_BOOKING_COLUMNS = [
 ];
 
 // The dashboard's three lists: top tours, top gear, and the latest bookings.
-export function DashboardTables({ topTours, topGear, recentBookings }) {
+// `range` is the dashboard's { from, to }.
+export function DashboardTables({ range, topTours, topGear, recentBookings }) {
   return (
     <>
       <div className="grid gap-6 xl:grid-cols-2">
         <DashboardSection title="Top tours by bookings">
           <DataTable
             caption="Top tours by bookings"
-            columns={TOP_TOUR_COLUMNS}
+            columns={topTourColumns(range)}
             rows={topTours}
             getRowKey={(row) => row.tourId}
             empty="No bookings in this range."

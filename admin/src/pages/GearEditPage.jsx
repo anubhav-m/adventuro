@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { EditorLoader } from '../components/forms/EditorLoader.jsx';
+import { DocumentLoader } from '../components/layout/DocumentLoader.jsx';
 import { GearForm } from '../components/gear/GearForm.jsx';
 import { useGear } from '../hooks/queries/useGear.js';
 
@@ -10,8 +10,8 @@ export function GearEditPage() {
 
   if (!id) return <GearForm />;
   return (
-    <EditorLoader query={gear} title="Edit gear">
+    <DocumentLoader query={gear} title="Edit gear">
       {(data) => <GearForm key={data.id} gear={data} />}
-    </EditorLoader>
+    </DocumentLoader>
   );
 }

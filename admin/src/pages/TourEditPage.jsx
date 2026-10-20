@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { EditorLoader } from '../components/forms/EditorLoader.jsx';
+import { DocumentLoader } from '../components/layout/DocumentLoader.jsx';
 import { TourForm } from '../components/tours/TourForm.jsx';
 import { useTour } from '../hooks/queries/useTours.js';
 
@@ -10,8 +10,8 @@ export function TourEditPage() {
 
   if (!id) return <TourForm />;
   return (
-    <EditorLoader query={tour} title="Edit tour">
+    <DocumentLoader query={tour} title="Edit tour">
       {(data) => <TourForm key={data.id} tour={data} />}
-    </EditorLoader>
+    </DocumentLoader>
   );
 }

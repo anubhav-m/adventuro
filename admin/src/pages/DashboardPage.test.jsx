@@ -161,6 +161,19 @@ describe('DashboardPage', () => {
     ]);
   });
 
+  it('links each top tour to its bookings over the same days, and each recent booking to its page', async () => {
+    serveDashboard();
+    setup();
+    await loaded();
+
+    expect(
+      within(table('Top tours by bookings')).getByRole('link', { name: 'Goa Coastal Escape' }),
+    ).toHaveAttribute('href', '/bookings?tour=tour-goa&from=2026-10-10&to=2026-10-12');
+    expect(
+      within(table('Recent bookings')).getByRole('link', { name: 'ADV-GS-2026-000001' }),
+    ).toHaveAttribute('href', '/bookings/ADV-GS-2026-000001');
+  });
+
   it('says so in every chart and table when the range has nothing in it', async () => {
     serveDashboard(EMPTY_DASHBOARD);
     setup();

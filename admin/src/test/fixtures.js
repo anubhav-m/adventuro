@@ -285,3 +285,52 @@ export const INACTIVE_GEAR = Object.freeze({
 
 // GET /admin/gear, one page.
 export const GEAR_LIST = Object.freeze([gearListItem(GEAR), gearListItem(INACTIVE_GEAR)]);
+
+// GET /admin/bookings/:bookingNumber, one of each status.
+export const [BOOKING, CANCELLED_BOOKING] = DASHBOARD.recentBookings;
+
+export const COMPLETED_BOOKING = Object.freeze({
+  ...BOOKING,
+  id: 'booking-ADV-TT-2026-000003',
+  bookingNumber: 'ADV-TT-2026-000003',
+  status: 'completed',
+  statusUpdatedAt: '2026-10-14T09:00:00.000Z',
+});
+
+// GET /admin/bookings, one page.
+export const BOOKING_LIST = Object.freeze([BOOKING, CANCELLED_BOOKING, COMPLETED_BOOKING]);
+
+// The admin user object: the session's user plus when they joined and last signed in.
+const adminUserObject = (user, createdAt) => ({
+  ...user,
+  createdAt,
+  lastLoginAt: '2026-10-15T04:30:00.000Z',
+});
+
+export const CUSTOMER_USER = Object.freeze(adminUserObject(CUSTOMER, '2026-10-02T06:30:00.000Z'));
+
+// A user who has signed in but never added a phone: no `phone` key at all.
+export const INCOMPLETE_USER = Object.freeze({
+  id: '6acb6f4b2fce015e85723266',
+  email: 'ira@example.com',
+  name: 'Ira Incomplete',
+  avatarUrl: null,
+  role: 'user',
+  themePreference: 'dark',
+  profileComplete: false,
+  createdAt: '2026-10-03T06:30:00.000Z',
+  lastLoginAt: null,
+});
+
+// GET /admin/users, one page.
+export const USER_LIST = Object.freeze([
+  Object.freeze(adminUserObject(ADMIN, '2026-10-01T06:30:00.000Z')),
+  CUSTOMER_USER,
+  INCOMPLETE_USER,
+]);
+
+// GET /admin/newsletter, one page.
+export const SUBSCRIBERS = Object.freeze([
+  { id: 'sub-1', email: 'reader.one@example.com', createdAt: '2026-10-12T06:30:00.000Z' },
+  { id: 'sub-2', email: 'reader.two@example.com', createdAt: '2026-10-11T06:30:00.000Z' },
+]);

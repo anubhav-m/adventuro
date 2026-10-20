@@ -102,18 +102,20 @@ export const findA11yViolations = async (page) => {
     .map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(' ')).join(' | ')}`);
 };
 
-// The admin API with the harness admin's session, outside any page: for setup and clean-up.
-// Dispose of it when done.
-export const adminApi = async () => {
+// The API with a harness user's session ('admin' | 'customer'), outside any page: for setup,
+// clean-up, and what a customer sees. Dispose of it when done.
+export const sessionApi = async (name) => {
   const tokens = await readSessionTokens();
   return playwrightRequest.newContext({
     baseURL: APP_URL,
     extraHTTPHeaders: {
-      cookie: `${SESSION_COOKIE}=${tokens.admin}`,
+      cookie: `${SESSION_COOKIE}=${tokens[name]}`,
       'x-forwarded-for': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
     },
   });
 };
+
+export const adminApi = () => sessionApi('admin');
 
 const pngChunk = (type, data) => {
   const length = Buffer.alloc(4);

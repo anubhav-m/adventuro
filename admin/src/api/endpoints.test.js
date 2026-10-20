@@ -221,7 +221,10 @@ describe('queryKeys', () => {
   });
 
   it('keys the dashboard by its range and taxonomies by their type', () => {
-    expect(queryKeys.dashboard({ from: 'a', to: 'b' })).toEqual([
+    expect(queryKeys.dashboard.range({ from: 'a', to: 'b' }).slice(0, 1)).toEqual(
+      queryKeys.dashboard.all,
+    );
+    expect(queryKeys.dashboard.range({ from: 'a', to: 'b' })).toEqual([
       'dashboard',
       { from: 'a', to: 'b' },
     ]);

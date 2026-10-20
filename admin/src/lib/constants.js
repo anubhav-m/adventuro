@@ -1,4 +1,16 @@
-import { Backpack, Layers, LayoutDashboard, MapIcon, Monitor, Moon, Sun, Tags } from 'lucide-react';
+import {
+  Backpack,
+  Layers,
+  LayoutDashboard,
+  Mail,
+  MapIcon,
+  Monitor,
+  Moon,
+  Sun,
+  Tags,
+  Ticket,
+  Users,
+} from 'lucide-react';
 
 export const BRAND = Object.freeze({ NAME: 'Adventuro', APP: 'Adventuro Admin' });
 
@@ -11,11 +23,19 @@ export const ROUTES = Object.freeze({
   GEAR: '/gear',
   NEW_GEAR: '/gear/new',
   TAXONOMIES: '/taxonomies',
+  BOOKINGS: '/bookings',
+  USERS: '/users',
+  NEWSLETTER: '/newsletter',
 });
 
 export const verticalPath = (id) => `${ROUTES.VERTICALS}/${id}`;
 export const tourPath = (id) => `${ROUTES.TOURS}/${id}`;
 export const gearPath = (id) => `${ROUTES.GEAR}/${id}`;
+export const bookingPath = (bookingNumber) => `${ROUTES.BOOKINGS}/${bookingNumber}`;
+export const userPath = (id) => `${ROUTES.USERS}/${id}`;
+// The bookings list showing one tour's bookings made in an inclusive range of IST days.
+export const tourBookingsPath = (tourId, { from, to }) =>
+  `${ROUTES.BOOKINGS}?${new URLSearchParams({ tour: tourId, from, to })}`;
 
 // The sidebar's sections, in order. Each session that builds a section adds it here.
 // `end` keeps the dashboard from staying current on every other path.
@@ -25,9 +45,17 @@ export const NAV_SECTIONS = Object.freeze([
   Object.freeze({ label: 'Tours', to: ROUTES.TOURS, icon: MapIcon }),
   Object.freeze({ label: 'Gear', to: ROUTES.GEAR, icon: Backpack }),
   Object.freeze({ label: 'Taxonomies', to: ROUTES.TAXONOMIES, icon: Tags }),
+  Object.freeze({ label: 'Bookings', to: ROUTES.BOOKINGS, icon: Ticket }),
+  Object.freeze({ label: 'Users', to: ROUTES.USERS, icon: Users }),
+  Object.freeze({ label: 'Newsletter', to: ROUTES.NEWSLETTER, icon: Mail }),
 ]);
 
 export const ROLES = Object.freeze({ USER: 'user', ADMIN: 'admin' });
+
+export const ROLE_OPTIONS = Object.freeze([
+  Object.freeze({ value: ROLES.USER, label: 'Customer' }),
+  Object.freeze({ value: ROLES.ADMIN, label: 'Admin' }),
+]);
 
 // The six vertical keys. `ink` is the token of the vertical's flat colour, for a chip's square
 // and a chart's series; the name beside it always comes from the API.
@@ -45,6 +73,18 @@ export const BOOKING_STATUS = Object.freeze({
   confirmed: Object.freeze({ label: 'Confirmed', tone: 'info', ink: 'var(--color-info)' }),
   completed: Object.freeze({ label: 'Completed', tone: 'success', ink: 'var(--color-success)' }),
   cancelled: Object.freeze({ label: 'Cancelled', tone: 'danger', ink: 'var(--color-danger)' }),
+});
+
+export const BOOKING_STATUS_OPTIONS = Object.freeze(
+  Object.entries(BOOKING_STATUS).map(([value, { label }]) => Object.freeze({ value, label })),
+);
+
+// What an admin can do to a booking, by its status (the server's transition table). Only a
+// confirmed booking can change, and only once.
+export const BOOKING_STATUS_ACTIONS = Object.freeze({
+  confirmed: Object.freeze(['completed', 'cancelled']),
+  completed: Object.freeze([]),
+  cancelled: Object.freeze([]),
 });
 
 export const THEME = Object.freeze({ SYSTEM: 'system', LIGHT: 'light', DARK: 'dark' });

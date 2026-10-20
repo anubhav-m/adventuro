@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { collectPages } from '../../api/collectPages.js';
 import { queryKeys } from '../../api/queryKeys.js';
 import { getTour, listTours } from '../../api/tours.api.js';
-import { LIMITS } from '../../lib/constants.js';
 
 // One page of the tours list. The page on screen stays while the next one loads.
 export const useTours = (params) =>
@@ -20,16 +20,9 @@ export const useTour = (id, { enabled = true } = {}) =>
 
 const ALL = Object.freeze({ scope: 'all' });
 
-// Every tour, published or not, page by page, for a picker that searches them all.
-const listAllTours = async ({ signal }) => {
-  const tours = [];
-  for (let page = 1, totalPages = 1; page <= totalPages; page += 1) {
-    const result = await listTours({ page, limit: LIMITS.PAGE_LIMIT_MAX }, { signal });
-    tours.push(...result.tours);
-    totalPages = result.meta.totalPages;
-  }
-  return tours;
-};
-
+// Every tour, published or not, for a picker or filter that offers them all.
 export const useAllTours = () =>
-  useQuery({ queryKey: queryKeys.tours.list(ALL), queryFn: listAllTours });
+  useQuery({
+    queryKey: queryKeys.tours.list(ALL),
+    queryFn: ({ signal }) => collectPages(listTours, 'tours', { signal }),
+  });

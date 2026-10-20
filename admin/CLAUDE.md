@@ -32,20 +32,21 @@ Install everything at its latest stable version.
 
 ## Folder structure
 
-Items marked (14) are built in that session and do not exist yet.
-
 ```
 admin/src/
 ├── main.jsx, App.jsx, router.jsx   # /login is outside the guard; RequireAdmin → AdminLayout → pages
 ├── styles/ (index.css, theme.css — theme.css is a copy of /design/theme.css)
 ├── api/
-│   ├── client.js (JSON; a FormData body goes as it is), ApiError.js (+ forbiddenError), queryKeys.js
+│   ├── client.js (JSON; a FormData body goes as it is), ApiError.js (+ forbiddenError), queryKeys.js,
+│   │   collectPages.js (every page of a list, 50 at a time: the tour picker and the CSV export)
 │   └── auth.api.js (also updateMe, for the theme), dashboard.api.js, verticals.api.js, tours.api.js,
 │       gear.api.js, taxonomies.api.js, uploads.api.js, bookings.api.js, users.api.js, newsletter.api.js
 ├── hooks/
-│   ├── queries/ (useMe, useDashboard, useVerticals, useTours (+ useAllTours), useGear, useTaxonomies)
+│   ├── queries/ (useMe, useDashboard, useVerticals, useTours (+ useAllTours), useGear, useTaxonomies,
+│   │             useBookings, useUsers, useSubscribers)
 │   ├── mutations/ (useGoogleSignIn, useSignOut, useUpdateProfile, useVerticalMutations,
-│   │               useTourMutations, useGearMutations, useTaxonomyMutations, useUploadMutations)
+│   │               useTourMutations, useGearMutations, useTaxonomyMutations, useUploadMutations,
+│   │               useBookingMutations (status + ticket download), useExportSubscribers)
 │   ├── useAdminSession.js      # the session as this app sees it: loading | error | signedOut | admin
 │   ├── useEditorForm.js        # one editor's form + uploads + unsaved guard + save (see Form behavior)
 │   ├── useUnsavedChanges.js, useUploadSession.js, useAutoSlug.js, useListKeys.js
@@ -53,25 +54,30 @@ admin/src/
 ├── components/
 │   ├── ui/          # Button, IconButton (button or link), Input, Textarea, Select, MultiSelect, Field
 │   │                # (+ FieldError), MoneyInput, Checkbox, Switch, Segmented, Badge, VerticalChip, Card,
-│   │                # Avatar, Thumbnail,
+│   │                # Avatar, Thumbnail, TextLink (router link with `to`, anchor with `href`),
 │   │                # Modal (center | left), ConfirmDialog, Tabs, Skeleton, SkeletonText, Spinner,
 │   │                # EmptyState, ErrorState, InlineError, Pagination
 │   ├── layout/      # AdminLayout, Sidebar (column from 1024px, drawer below), SidebarNav, Topbar,
-│   │                # PageHeader (h1 + document title), ThemeSwitcher, Wordmark, AppToaster, RouteFallback
+│   │                # PageHeader (h1 + document title), DocumentLoader (a one-document page while it
+│   │                # loads), ThemeSwitcher, Wordmark, AppToaster, RouteFallback
 │   ├── data/        # DataTable, FilterBar (+ FILTER_TYPE), SearchField, StatCard, ChartCard,
+│   │                # DetailList (label / value pairs), DetailCard (a titled plate of them),
 │   │                # TrendChart, CategoryChart, ChartTooltip, chartStyle.js
 │   ├── dashboard/   # DateRangePicker, DashboardStats, DailyCharts, BreakdownCharts, DashboardTables,
 │   │                # DashboardSection, DashboardSkeleton
 │   ├── forms/       # ImageUploader, ImageGallery, StringListEditor (inclusions/activities),
 │   │                # ItineraryEditor, TierEditor, TaxonomySelect, TourMultiSelect, PriceInputs,
 │   │                # ListRowActions, ListField, FormSection, FormStatus, SaveButton,
-│   │                # UnsavedChangesDialog, EditorLoader
+│   │                # UnsavedChangesDialog
 │   ├── tours/       # TourForm (+ one *Fields component per tab), TourLinkedGear, ToursTable,
 │   │                # TourDeleteDialog
 │   ├── gear/        # GearForm, GearDetailsFields, GearSellingFields, GearGroupingFields, GearTable,
 │   │                # GearDeleteDialog
 │   ├── verticals/   # VerticalForm
 │   ├── taxonomies/  # TaxonomyPanel, TaxonomyAddForm
+│   ├── bookings/    # BookingsTable (with or without the customer column), BookingDetails,
+│   │                # BookingActions, BookingStatusDialog, BookingStatusBadge
+│   ├── users/       # UsersTable, UserProfile, UserRoleBadge
 │   ├── auth/        # GoogleSignInButton, RequireAdmin, SessionBoundary
 │   ├── ThemeProvider.jsx, SessionThemeProvider.jsx, ThemeSync.jsx
 │   └── QueryBoundary.jsx
@@ -81,23 +87,28 @@ admin/src/
 │   ├── ToursPage, TourEditPage             # /tours/new and /tours/:id share TourEditPage
 │   ├── GearPage, GearEditPage              # /gear/new and /gear/:id share GearEditPage
 │   ├── TaxonomiesPage
-│   └── (14) BookingsPage, BookingDetailPage, UsersPage, UserDetailPage, NewsletterPage
+│   ├── BookingsPage, BookingDetailPage
+│   ├── UsersPage, UserDetailPage
+│   └── NewsletterPage
 ├── lib/ (errors.js, format.js, constants.js, schemas.js, storage.js, dashboardRange.js,
 │        queryClient.js, googleIdentity.js, cn.js, tourForm.js, gearForm.js, listParams.js,
-│        slugify.js, list.js, csv.js (14))
-└── test/ (setup.js, server.js, render.jsx, matchMedia.js, googleIdentity.js, fixtures.js, contentApi.js)
+│        slugify.js, list.js, csv.js, download.js)
+└── test/ (setup.js, server.js, render.jsx, matchMedia.js, googleIdentity.js, fixtures.js, contentApi.js,
+          opsApi.js, downloads.js)
 
 admin/e2e/           # Playwright specs + fixtures.js; screenshots/ is gitignored
 ```
 
-**Adding a section** (sessions 13 and 14): add its routes inside `AdminLayout` in `router.jsx`, and its entry to `NAV_SECTIONS` in `lib/constants.js`. The sidebar lists only what is in `NAV_SECTIONS`.
+**Adding a section**: add its routes inside `AdminLayout` in `router.jsx`, and its entry to `NAV_SECTIONS` in `lib/constants.js`. The sidebar lists only what is in `NAV_SECTIONS`.
 
 ## Shared pieces and how to use them
 
 - **DataTable**: `columns` are `{ key, header, render?, align?: 'right', className? }`. `rowActions(row)` returns `{ key, label, icon, onSelect? | to?, variant? }`, and each `label` names its row ("Edit Goa Escape"). `pagination` is the list's `meta` plus `onPageChange`. `loading` draws placeholder rows and an empty list draws `empty` in one row, so a list page passes `<DataTable loading />` as the `QueryBoundary` skeleton with `isEmpty={() => false}`. A wide table scrolls sideways inside its own frame.
 - **FilterBar**: `<FilterBar defaults={DEFAULTS} fields={[{ key, label, type, options?, placeholder? }]} />`, with `type` from `FILTER_TYPE` (search, select, date). It writes the URL through `useUrlFilters(DEFAULTS)`; the page calls the same hook with the same module-level `DEFAULTS` to read the filters. Search is debounced 300 ms and replaces the history entry. Any filter change returns the list to page 1.
 - **Charts** (recharts): `TrendChart` (one figure per day, as a line or bars, in `--color-text`) and `CategoryChart` (one named bar per category, each in its own ink). Colours come only from `chartStyle.js`, `VERTICAL_INKS` and `BOOKING_STATUS[…].ink`, all CSS variables, so both themes work without script. Every chart sits in a `ChartCard`, which hides the drawing from assistive technology and gives the same figures as a visually hidden table (`columns`, `rows`). `empty` replaces an all-zero chart with a line of text.
-- **VerticalChip** is the only way a vertical is shown. A status is a **Badge** with `BOOKING_STATUS[status]`.
+- **VerticalChip** is the only way a vertical is shown. A status is a **BookingStatusBadge** (a Badge with `BOOKING_STATUS[status]`).
+- **Links to another page** inside a table or a detail plate are a `TextLink` on the item's own name or number (booking number, user name, tour title), not a clickable row, so they work from the keyboard and read as links.
+- **DocumentLoader** is the page for one document (an editor, a booking, a user): the page keeps its title while the document loads or fails.
 - **Tabs** keeps every panel mounted (hidden while closed) so one form can run across them. `flagged` marks a tab that needs attention.
 - **Switch** applies as it is pressed in a table row (Published, Active). Inside an editor it is one of the form's values and saves with Save. **ConfirmDialog** stays open and cannot be dismissed while `loading`, and shows `error` inside itself.
 - **PageHeader** renders the page's only `h1` and sets the document title (`{title} · Adventuro Admin`).
@@ -165,7 +176,8 @@ How it is built:
 - URL params: `range` is `7`, `90` or `custom` (30 days is the default and is left out), plus `from` and `to` (`YYYY-MM-DD`) when custom. `lib/dashboardRange.js` turns them into the range to ask for: a preset is counted back from today in IST, today included, and `from` and `to` are always sent. An unknown `range` falls back to 30 days.
 - A custom range is checked the way the server checks it (real dates, `from` ≤ `to`, at most 366 days). An invalid one shows its message on the date field and is not requested.
 - Bookings per day is a bar chart of the count; each day's booking value is in its tooltip and its data table.
-- Recent bookings shows booking number, customer, tour, vertical, travelers, booking value, status and when it was booked. Its rows become links when session 14 builds the booking detail page.
+- Recent bookings shows booking number, customer, tour, vertical, travelers, booking value, status and when it was booked. Each booking number links to its page.
+- Each top tour's title links to the bookings list for that tour over the dashboard's range (`/bookings?tour&from&to`), so the counts match.
 
 ### Verticals (`/verticals`, `/verticals/:id`)
 - List of the 6 verticals.
@@ -201,19 +213,23 @@ How it is built:
 
 ### Bookings (`/bookings`, `/bookings/:bookingNumber`)
 - **List:** filters (status, vertical, tour, date range, search by booking number / name / phone / email), columns (booking number, customer, tour, tier, travelers, start date, total, status, created).
-- **Detail:**
-  - all booking info plus customer contact
-  - status actions: **Mark completed** / **Cancel**, only from `confirmed`, each with a `ConfirmDialog`
-  - download the ticket PDF
+  - The date range is the day the booking was **made** ("Booked from" / "Booked to", IST). A range that ends before it starts is not requested; the page says what to fix instead.
+  - The tour filter offers every tour (`useAllTours`); the vertical filter sends the vertical's key.
+  - "Booked" shows the day only; the booking's page has the time. The tour cell carries its vertical chip.
+- **Detail** (`/bookings/:bookingNumber`, titled with the booking number):
+  - plates: Trip (the tour links to its editor while it exists; package and price as booked), Customer (name links to the user's page; `tel:` and `mailto:` links), Reporting (the tour's current details, or a note when the tour is gone), Record (status, when booked, when the status changed)
+  - status actions: **Mark completed** / **Cancel booking**, only from `confirmed` (`BOOKING_STATUS_ACTIONS`), each with a `ConfirmDialog` whose back-out button reads "Keep as it is". A refusal (`INVALID_STATUS_TRANSITION`) shows inside the dialog.
+  - A change puts the booking into its detail query and invalidates every bookings list, every user query (their bookings) and the dashboard.
+  - download the ticket PDF (`GET /bookings/:n/ticket`, which serves any booking to an admin), saved as `Adventuro-{bookingNumber}.pdf`
 
 ### Users (`/users`, `/users/:id`)
 - **List:** search, role filter, columns (avatar, name, email, phone, role, joined, last login).
-- **Detail:** profile plus that user's bookings table.
+- **Detail:** profile (Account and Activity plates) plus that user's 50 most recent bookings, in `BookingsTable` without the customer column.
 - Read-only. Roles come from `ADMIN_EMAILS`, so there is no role editing in the UI.
 
 ### Newsletter (`/newsletter`)
 - Paginated list of subscribers.
-- **Export CSV**, built client-side by `lib/csv.js` from all pages. Escape cells to prevent CSV/formula injection by prefixing `= + - @` with `'`.
+- **Export CSV**, built client-side by `lib/csv.js` from all pages (`collectPages`, 50 a page). Every cell is quoted (RFC 4180, CRLF), and a cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with `'` so a spreadsheet never runs it. The file starts with a UTF-8 byte-order mark, has the columns Email and Subscribed at (UTC, ISO), and is named `adventuro-newsletter-{IST date}.csv`.
 
 ## Form behavior
 
@@ -248,7 +264,7 @@ How it is built:
 - dom-testing-library treats every `<header>` as a banner, so find the topbar through its Sign out button.
 - A test that renders the real `routes` imports the lazy pages in a `beforeAll` (see `AdminLayout.test.jsx`): the dashboard brings recharts with it.
 - jsdom's `FormData` is not the one Node's `fetch` encodes, so the upload request is asserted at `fetch` (see `endpoints.test.js`).
-- **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 768px (tablet) and 1440px (desktop). It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4174), or reuses them if they are already running. Stop a dev backend on port 5000 first, or the suite runs against the dev database. First run on a machine: `npx playwright install chromium`.
+- **E2E:** `npm run e2e` runs the Playwright specs in `e2e/` at 768px (tablet) and 1440px (desktop). `operations.spec.js` changes bookings, so it runs in its own projects (`tablet-ops`, `desktop-ops`) that depend on the other two: the dashboard spec compares live figures and must not read them while they move. Each status-changing test books its own trip as the harness customer (two per width per run). The booking limiter allows that customer 10 an hour, so one harness supports two full runs; restart it after that. Read-only tests use the seeded PeakPulse booking and leave it confirmed. It starts the backend harness (`npm run e2e:server` in `../backend`, port 5000) and a production build on `vite preview` (port 4174), or reuses them if they are already running. Stop a dev backend on port 5000 first, or the suite runs against the dev database. First run on a machine: `npx playwright install chromium`.
 - **E2E fixtures** (`e2e/fixtures.js`): import `test` from there. It gives every test its own `X-Forwarded-For` and `signInAs('admin' | 'customer')`, which injects that user's cookie from `/e2e/.auth.json`. `open(page, path, theme)` waits until nothing is loading. `watchForErrors` ignores only the browser's own report of the 401 from `GET /auth/me`. `findA11yViolations` runs axe (WCAG 2.1 A and AA) and returns the serious and critical violations.
 - Every test shares the one harness admin, so a spec must not really change that user (its theme, say). Answer the save with `page.route` instead, as the theme test in `dashboard.spec.js` does.
 - `content.spec.js` uploads to the **real Supabase dev bucket** from `backend/.env` (`makePng()` in the fixtures makes the file). It runs serially per project with unique names, deletes what it created (also in `afterAll`, through `adminApi()`), and checks deleted images with a cache-busting query, because uploads are cached by the CDN for a year. The unpublish-instead test uses a different demo tour per project and publishes it again at the end.
@@ -264,6 +280,7 @@ How it is built:
   - gear form sale ≤ MRP and https-URL validation
   - the unsaved-changes blocker; delete flows including RESOURCE_IN_USE → unpublish
   - booking status actions only shown for `confirmed`
+- `serveOpsLists()` (`src/test/opsApi.js`) answers bookings, users and newsletter with one page each. `captureDownloads()` (`src/test/downloads.js`), called at the top of a test file, records every file the app saves as `{ filename, blob }` (jsdom has no object URLs).
 
 ## Definition of done
 
