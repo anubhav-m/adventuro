@@ -11,7 +11,7 @@ export const SESSION_STATUS = Object.freeze({
 });
 
 // The session as this app sees it: an admin, or nobody. A signed-in account that is not an
-// admin (a customer's cookie from the other app) is signed out here and reported as `denied`,
+// admin (a customer who signed in here) is signed out here and reported as `denied`,
 // so the login page can say why. Returns { status, user?, denied?, error?, retry? }.
 export const useAdminSession = () => {
   const me = useMe();

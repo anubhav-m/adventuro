@@ -38,6 +38,7 @@ Install everything at its latest stable version. Don't add a UI kit or a date li
 - `vite preview` uses the same proxy, so the Playwright suite runs against a production build.
 - In production, `vercel.json` rewrites `/api/*` to the backend, keeping the cookie first-party. Vercel cannot read env vars inside `vercel.json`, so the backend host there is the placeholder `adventuro-backend.example.com`; replace it before deploying (also noted in `.env.example` and `README.md`).
 - Never put secrets in `VITE_` vars.
+- `vercel.json` also sends the security headers: a CSP (scripts: self, the inline theme script by its SHA-256, Google Identity Services; images: self, Supabase, Google avatars, the demo photo host), `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`. Editing the inline script in `index.html` means updating its hash there; `src/deployConfig.test.js` fails until you do. A new image host must be added to `img-src`.
 
 ## Folder structure
 
@@ -128,6 +129,7 @@ frontend/src/
 │   ├── aboutContent.js        # the About page's copy
 │   ├── download.js            # saveBlob(blob, filename)
 │   ├── schemas.js             # zod form schemas (profile, booking, newsletter) + FIELD_MESSAGES
+│   ├── zod.js                 # `z` with jitless on (no eval probe under the CSP); the only module that imports 'zod'
 │   ├── storage.js             # localStore / sessionStore: get, set, remove that never throw;
 │   │                          # bookingIntent: save / restore / clear (sessionStorage)
 │   ├── next.js                # ?next= handling: safeNext, readNext, withNext, getSignedInPath
@@ -275,6 +277,8 @@ Tests sit next to the file they cover (`Button.test.jsx`, `errors.test.js`).
 ## Security
 
 - No `dangerouslySetInnerHTML`. All content renders as text.
+- No `eval` or `new Function` anywhere: the CSP forbids them. Import `z` from `lib/zod.js`, never from `'zod'` (ESLint enforces it).
+- `next` must be an in-app path with no whitespace or control characters (`safeNext`): browsers strip tabs and newlines, so `/<tab>/host` would become `//host`.
 - External links use `rel="noopener noreferrer"`.
 - Only `VITE_`-prefixed, non-secret env vars.
 - Run `npm audit` and keep it at 0 vulnerabilities.

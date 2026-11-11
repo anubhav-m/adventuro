@@ -6,7 +6,7 @@ import { test as base, expect, request as playwrightRequest } from '@playwright/
 
 // Written by the backend harness on start: { customer, incompleteCustomer, admin } session tokens.
 const AUTH_FILE = new URL('../../e2e/.auth.json', import.meta.url);
-const SESSION_COOKIE = 'adv_session';
+const SESSION_COOKIE = 'adv_admin_session';
 const APP_URL = 'http://localhost:4174';
 
 const readSessionTokens = async () => JSON.parse(await readFile(AUTH_FILE, 'utf8'));
@@ -110,6 +110,7 @@ export const sessionApi = async (name) => {
     baseURL: APP_URL,
     extraHTTPHeaders: {
       cookie: `${SESSION_COOKIE}=${tokens[name]}`,
+      'x-adventuro-app': 'admin',
       'x-forwarded-for': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`,
     },
   });

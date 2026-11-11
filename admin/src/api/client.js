@@ -1,6 +1,9 @@
 import { ApiError, NETWORK_ERROR } from './ApiError.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+// Tells the API to use the admin session cookie, so this app and the customer app never share
+// a sign-in (on localhost the two ports would otherwise share one cookie).
+const APP_HEADER = { 'X-Adventuro-App': 'admin' };
 
 const buildUrl = (path, params = {}) => {
   const url = new URL(`${API_BASE_URL}${path}`, window.location.origin);
@@ -22,6 +25,7 @@ const send = async (path, { method = 'GET', body, params, signal } = {}) => {
       signal,
       headers: {
         Accept: 'application/json',
+        ...APP_HEADER,
         ...(isJson && { 'Content-Type': 'application/json' }),
       },
       ...(body !== undefined && { body: isJson ? JSON.stringify(body) : body }),

@@ -9,3 +9,5 @@ PROGRESS.md
 .impeccable/questions/
 .impeccable/config.local.json
 .impeccable/hook.cache.json
+test-results/
+playwright-report/

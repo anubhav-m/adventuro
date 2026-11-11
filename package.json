@@ -1,0 +1,16 @@
+{
+  "name": "adventuro-e2e",
+  "version": "0.1.0",
+  "description": "Adventuro cross-app end-to-end suite: customer app, admin app and API together",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

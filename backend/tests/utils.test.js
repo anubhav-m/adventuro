@@ -156,8 +156,8 @@ describe('cookies.durationToMs', () => {
 
 describe('auth cookie helpers', () => {
   const cookieApp = express();
-  cookieApp.get('/set', (_req, res) => setAuthCookie(res, 'signed.jwt.value').end());
-  cookieApp.get('/clear', (_req, res) => clearAuthCookie(res).end());
+  cookieApp.get('/set', (req, res) => setAuthCookie(req, res, 'signed.jwt.value').end());
+  cookieApp.get('/clear', (req, res) => clearAuthCookie(req, res).end());
 
   it('sets adv_session with the session flags and a maxAge matching JWT_EXPIRES_IN', async () => {
     const res = await request(cookieApp).get('/set');
@@ -176,6 +176,13 @@ describe('auth cookie helpers', () => {
     expect(cookie).toMatch(/^adv_session=;/);
     expect(cookie).toMatch(/Path=\/;/);
     expect(cookie).toMatch(/Expires=Thu, 01 Jan 1970/);
+  });
+
+  it('uses adv_admin_session for requests from the admin app', async () => {
+    const set = await request(cookieApp).get('/set').set('X-Adventuro-App', 'admin');
+    expect(set.headers['set-cookie'][0]).toMatch(/^adv_admin_session=signed\.jwt\.value;/);
+    const clear = await request(cookieApp).get('/clear').set('X-Adventuro-App', 'admin');
+    expect(clear.headers['set-cookie'][0]).toMatch(/^adv_admin_session=;/);
   });
 });
 

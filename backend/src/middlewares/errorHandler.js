@@ -71,7 +71,7 @@ const normalize = (err) => {
 };
 
 // Express identifies error middleware by its four-argument signature.
-export const errorHandler = (err, _req, res, _next) => {
+export const errorHandler = (err, req, res, _next) => {
   const known = normalize(err);
 
   if (!known) {
@@ -85,6 +85,6 @@ export const errorHandler = (err, _req, res, _next) => {
   }
 
   const { statusCode, code, message, errors, clearSession } = known;
-  if (clearSession) clearAuthCookie(res);
+  if (clearSession) clearAuthCookie(req, res);
   return res.status(statusCode).json({ success: false, message, code, ...(errors && { errors }) });
 };

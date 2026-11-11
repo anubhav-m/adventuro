@@ -20,6 +20,7 @@ describe('env', () => {
       ...validEnv,
       PORT: 8080,
       JWT_EXPIRES_IN: '7d',
+      TRUST_PROXY_HOPS: 1,
       LOG_LEVEL: 'info',
       ADMIN_EMAILS: ['admin@example.com', 'second@example.com'],
       CORS_ORIGINS: ['http://localhost:5173', 'http://localhost:5174'],
@@ -28,7 +29,16 @@ describe('env', () => {
 
   it('applies defaults for optional values', () => {
     const { NODE_ENV: _nodeEnv, PORT: _port, ADMIN_EMAILS: _admins, ...rest } = validEnv;
-    expect(parseEnv(rest)).toMatchObject({ NODE_ENV: 'development', PORT: 5000, ADMIN_EMAILS: [] });
+    expect(parseEnv(rest)).toMatchObject({
+      NODE_ENV: 'development',
+      PORT: 5000,
+      ADMIN_EMAILS: [],
+      TRUST_PROXY_HOPS: 1,
+    });
+  });
+
+  it('reads the number of trusted proxy hops', () => {
+    expect(parseEnv({ ...validEnv, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
   });
 
   it('rejects a JWT_SECRET shorter than 32 characters', () => {
@@ -48,6 +58,8 @@ describe('env', () => {
     ['SUPABASE_URL', 'not-a-url'],
     ['CORS_ORIGINS', ''],
     ['LOG_LEVEL', 'loud'],
+    ['TRUST_PROXY_HOPS', '-1'],
+    ['TRUST_PROXY_HOPS', 'all'],
   ])('rejects an invalid %s', (key, value) => {
     expect(() => parseEnv({ ...validEnv, [key]: value })).toThrow(new RegExp(key));
   });

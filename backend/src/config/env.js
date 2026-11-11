@@ -24,6 +24,9 @@ const envSchema = z.object({
   SUPABASE_URL: z.url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   SUPABASE_BUCKET: z.string().min(1),
+  // Proxies in front of the app that append to X-Forwarded-For: 1 for Render alone, 2 when the
+  // Vercel rewrite sits in front of Render. Rate limits key on the address this yields.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 

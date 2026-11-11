@@ -1,0 +1,41 @@
+# Render Blueprint for the Adventuro API (backend/). The two Vercel apps rewrite /api/* here.
+# Values marked `sync: false` are asked for when the Blueprint is first applied; see README.md.
+services:
+  - type: web
+    name: adventuro-backend
+    runtime: node
+    rootDir: backend
+    region: singapore
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '24'
+      - key: NODE_ENV
+        value: production
+      # Vercel's rewrite and Render's own proxy both append to X-Forwarded-For.
+      - key: TRUST_PROXY_HOPS
+        value: '2'
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: LOG_LEVEL
+        value: info
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        sync: false

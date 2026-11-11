@@ -73,7 +73,12 @@ export const ERROR_CODES = Object.freeze({
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 });
 
+// Each app keeps its own session. Cookies belong to a host, not a port, so on localhost the
+// two apps would otherwise share one. The admin app says who it is with APP_HEADER.
 export const AUTH_COOKIE_NAME = 'adv_session';
+export const ADMIN_AUTH_COOKIE_NAME = 'adv_admin_session';
+export const APP_HEADER = 'x-adventuro-app';
+export const ADMIN_APP = 'admin';
 export const TIMEZONE = 'Asia/Kolkata';
 
 export const PHONE_REGEX = /^[6-9]\d{9}$/;

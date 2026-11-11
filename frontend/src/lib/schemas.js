@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from './zod.js';
 import { LIMITS } from './constants.js';
 import { getIstDateOnly } from './format.js';
 

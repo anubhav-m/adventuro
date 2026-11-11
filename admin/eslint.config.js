@@ -21,8 +21,20 @@ export default [
       eqeqeq: ['error', 'always'],
       'no-var': 'error',
       'object-shorthand': ['error', 'always'],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'zod',
+              message: "Import { z } from 'lib/zod.js', which keeps zod within the CSP.",
+            },
+          ],
+        },
+      ],
     },
   },
+  { files: ['src/lib/zod.js'], rules: { 'no-restricted-imports': 'off' } },
   {
     files: ['*.config.js', 'e2e/**/*.js'],
     languageOptions: { globals: globals.node },

@@ -58,9 +58,12 @@ e2e:server     node --env-file=.env scripts/e2e-server.js    # E2E harness for t
 | `SUPABASE_URL` | |
 | `SUPABASE_SERVICE_ROLE_KEY` | backend only, never logged |
 | `SUPABASE_BUCKET` | public bucket for images |
+| `TRUST_PROXY_HOPS` | default `1`. Proxies that append to `X-Forwarded-For` in front of the app; `2` in production (Vercel rewrite → Render), so rate limits see the visitor's address |
 | `LOG_LEVEL` | default `info` |
 
 Export a frozen, typed object. Nothing else reads `process.env`.
+
+Production runs on Render from `/render.yaml` (Node 24, `npm ci --omit=dev`, `npm start`, health check `/api/v1/health`). It sets `NODE_ENV=production` and `TRUST_PROXY_HOPS=2`, generates `JWT_SECRET`, and asks for the rest. Add any new env var there too (key only, `sync: false`).
 
 ## Folder structure
 
@@ -429,9 +432,10 @@ Days are bucketed in `Asia/Kolkata` (`$dateToString` with `timezone`), so a book
 
 **HTTP layer**
 - `helmet()`.
-- `app.set('trust proxy', 1)` (Render).
+- `app.set('trust proxy', env.TRUST_PROXY_HOPS)`: 1 locally, 2 in production (Vercel → Render). With 1 behind Vercel every visitor would share Vercel's address and one rate-limit bucket.
 - `express.json({ limit: '100kb' })`.
 - `cors({ origin: CORS_ORIGINS allowlist, credentials: true })`.
+- `server.js` sets `keepAliveTimeout` to 65 s (`headersTimeout` 66 s). Node's 5 s default equals the idle time of the proxies' own keep-alive pools, so a reused connection could be closed under a request (ECONNRESET → 502). The API must always hold idle connections longer than the proxy in front of it.
 
 **Database**
 - Set `mongoose.set('sanitizeFilter', true)` and `mongoose.set('strictQuery', true)`.
@@ -439,7 +443,8 @@ Days are bucketed in `Asia/Kolkata` (`$dateToString` with `timezone`), so a book
 
 **Session**
 - The JWT is HS256 with `algorithms: ['HS256']` passed explicitly to `verify`, payload `{ sub }`, expiring per `JWT_EXPIRES_IN`.
-- The cookie is `adv_session`: `httpOnly`, `secure` in production, `sameSite: 'lax'`, `path: '/'`, `maxAge` matching the JWT.
+- Each app has its own session cookie, so signing in or out of one never touches the other (on localhost both apps share a host, and cookies ignore ports). Requests with `X-Adventuro-App: admin` (the admin app sends it on every call) use `adv_admin_session`; all others use `adv_session`. `authCookieName(req)` in `utils/cookies.js` picks it for set, clear and read.
+- Both cookies are `httpOnly`, `secure` in production, `sameSite: 'lax'`, `path: '/'`, `maxAge` matching the JWT.
 - `requireAuth` **loads the user from the DB on every request**, so role changes and deletions take effect immediately. `req.user` is a hydrated Mongoose document (`req.user.id`, `req.user.profileComplete`).
 - `optionalAuth` sets `req.user` for a valid session and otherwise continues as a guest; it never errors and never clears the cookie.
 - `sameSite: 'lax'` on a first-party cookie (via the Vercel rewrites) is the CSRF defense. Never move the token to `localStorage` or response bodies.
@@ -549,7 +554,7 @@ Idempotent by slug: a tour or gear item whose slug already exists is left untouc
    ```json
    { "customer": "<jwt>", "incompleteCustomer": "<jwt>", "admin": "<jwt>" }
    ```
-   Each value is the value of the `adv_session` cookie. `customer` has a complete profile, `incompleteCustomer` has a name but no phone, `admin` has the admin role (set directly on the user; `ADMIN_EMAILS` is not involved).
+   Each value is a session token, valid as either cookie (`adv_session` or `adv_admin_session`). `customer` has a complete profile, `incompleteCustomer` has a name but no phone, `admin` has the admin role (set directly on the user; `ADMIN_EMAILS` is not involved).
 5. Serves the real app on port **5000**.
 
 Nothing is mocked: every other env var is read from `.env` as usual, and Supabase is real, so uploads made during E2E runs land in the dev bucket and the suite must delete what it creates. All data is lost when the process stops; restart it for a clean state.

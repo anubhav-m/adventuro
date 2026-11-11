@@ -30,7 +30,7 @@ describe('request', () => {
     await expect(request('/auth/logout', { method: 'POST' })).resolves.toEqual({});
   });
 
-  it('sends the session cookie, and query params without the empty ones', async () => {
+  it('sends the session cookie with the admin app header, and query params without the empty ones', async () => {
     server.use(http.get(api('/gear'), () => success({ gear: [] })));
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     await request('/gear', {
@@ -40,6 +40,7 @@ describe('request', () => {
     fetchSpy.mockRestore();
 
     expect(init.credentials).toBe('include');
+    expect(init.headers).toHaveProperty('X-Adventuro-App', 'admin');
     expect(url.pathname).toBe('/api/v1/gear');
     expect(Object.fromEntries(url.searchParams)).toEqual({ q: 'dry bag', page: '2' });
     expect(init.headers).not.toHaveProperty('Content-Type');

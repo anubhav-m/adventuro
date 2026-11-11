@@ -323,3 +323,42 @@ describe('POST /api/v1/auth/logout', () => {
     expectClearedCookie(res);
   });
 });
+
+describe('separate sessions per app', () => {
+  const fromAdminApp = (req) => req.set('X-Adventuro-App', 'admin');
+
+  it('signs in from the admin app with its own cookie', async () => {
+    mockGoogle(googlePayload());
+    const res = await fromAdminApp(request(app).post('/api/v1/auth/google')).send({
+      credential: 'google-id-token',
+    });
+    expect(res.status).toBe(200);
+    const [cookie] = res.headers['set-cookie'];
+    expect(cookie).toMatch(/^adv_admin_session=[\w-]+\.[\w-]+\.[\w-]+;/);
+    expect(cookie).toMatch(/HttpOnly/);
+  });
+
+  it('the admin app ignores the customer session and the customer app the admin one', async () => {
+    const token = signSessionToken((await createUser()).id);
+    const adminMe = await fromAdminApp(request(app).get('/api/v1/auth/me')).set(
+      'Cookie',
+      `adv_session=${token}`,
+    );
+    expect(adminMe.status).toBe(401);
+    const customerMe = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', `adv_admin_session=${token}`);
+    expect(customerMe.status).toBe(401);
+    const both = await fromAdminApp(request(app).get('/api/v1/auth/me')).set(
+      'Cookie',
+      `adv_session=${token}; adv_admin_session=${token}`,
+    );
+    expect(both.status).toBe(200);
+  });
+
+  it('signing out of the admin app clears only the admin cookie', async () => {
+    const res = await fromAdminApp(request(app).post('/api/v1/auth/logout'));
+    expect(res.headers['set-cookie']).toHaveLength(1);
+    expect(res.headers['set-cookie'][0]).toMatch(/^adv_admin_session=;/);
+  });
+});

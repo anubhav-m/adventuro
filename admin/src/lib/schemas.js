@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from './zod.js';
 import { DIFFICULTY_OPTIONS, LIMITS } from './constants.js';
 import { countDaysInclusive, formatNumber, isDateOnly } from './format.js';
 

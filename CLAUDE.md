@@ -16,9 +16,14 @@ Adventuro is a travel-experience and adventure-gear web app built for a client. 
 ├── design/        ← theme.css (token source of truth), tailwind-tokens.md, reference sketch
 ├── backend/       ← Express + MongoDB REST API          → backend/CLAUDE.md
 ├── frontend/      ← customer-facing React app           → frontend/CLAUDE.md
-└── admin/         ← admin React app (dashboard + panel) → admin/CLAUDE.md
+├── admin/         ← admin React app (dashboard + panel) → admin/CLAUDE.md
+├── e2e/           ← cross-app Playwright suite (root package.json + playwright.config.js)
+├── render.yaml    ← Render Blueprint for the backend
+├── README.md      ← setup, scripts, env vars, testing, deploy
+└── SECURITY_REVIEW.md ← session 15 security review: findings and fixes
 ```
 
+- The root `package.json` exists only for the cross-app E2E suite (`npm run e2e` at the root): it starts the backend harness and both apps' dev servers (5173, 5174) and follows one tour through both apps. It holds no app code.
 - These are three independent npm projects with no shared package. The **Shared contracts** section below is the single source of truth between them.
 - If you change a contract, update this file **and** every app that uses it in the same change.
 - Before working inside a folder, read that folder's CLAUDE.md. Folder rules add to this file. They never override **Scope** or **Shared contracts**.
@@ -214,7 +219,7 @@ To add a code: add it here first, then in the backend, then in **both** frontend
 2. `POST /api/v1/auth/google { credential }`. The backend verifies the token (audience = `GOOGLE_CLIENT_ID`, `email_verified` must be true), upserts the user, syncs the role from `ADMIN_EMAILS`, sets an httpOnly cookie, and returns `{ user }`. The user object includes `profileComplete`.
 3. The cookie is sent with every request (same-origin through the proxy). `GET /api/v1/auth/me` restores the session.
 4. `POST /api/v1/auth/logout` clears the cookie.
-5. The admin app uses the same endpoints. It blocks non-admins in the UI, and the backend enforces the role on every `/admin` route.
+5. The admin app uses the same endpoints, and sends `X-Adventuro-App: admin` on every request. The backend then uses a separate cookie (`adv_admin_session` instead of `adv_session`), so the two apps never share a sign-in, even on localhost where cookies ignore the port. Neither app signs in automatically: a session starts only from that app's own Google button. The admin app blocks non-admins in the UI, and the backend enforces the role on every `/admin` route.
 
 ---
 

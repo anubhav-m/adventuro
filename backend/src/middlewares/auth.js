@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
-import { AUTH_COOKIE_NAME, ERROR_CODES, ROLES } from '../config/constants.js';
+import { ERROR_CODES, ROLES } from '../config/constants.js';
 import { User } from '../models/User.js';
 import { verifySessionToken } from '../services/auth.service.js';
 import { AppError } from '../utils/AppError.js';
+import { authCookieName } from '../utils/cookies.js';
 
 // The user is loaded on every request so role changes and deletions apply immediately.
 const loadSessionUser = async (req) => {
-  const token = req.cookies?.[AUTH_COOKIE_NAME];
+  const token = req.cookies?.[authCookieName(req)];
   if (!token) return null;
   const { sub } = verifySessionToken(token);
   return mongoose.isValidObjectId(sub) ? User.findById(String(sub)) : null;

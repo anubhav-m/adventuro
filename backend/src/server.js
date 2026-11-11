@@ -4,6 +4,12 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
+// Proxies in front of the API (Vite in development, Vercel and Render in production) reuse idle
+// connections. Node closes them after 5 s by default, the same idle time Node's own client
+// agent uses, so a request sent at that moment met a closed socket (ECONNRESET, 502). Holding
+// connections longer than any proxy keeps them lets the proxy always close first.
+const KEEP_ALIVE_TIMEOUT_MS = 65_000;
+const HEADERS_TIMEOUT_MS = 66_000;
 
 await connectDb();
 logger.info('MongoDB connected');
@@ -11,6 +17,8 @@ logger.info('MongoDB connected');
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Adventuro API listening');
 });
+server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+server.headersTimeout = HEADERS_TIMEOUT_MS;
 
 let shuttingDown = false;
 

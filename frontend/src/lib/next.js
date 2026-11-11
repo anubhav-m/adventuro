@@ -1,8 +1,9 @@
 import { ROUTES } from './constants.js';
 
 const NEXT_PARAM = 'next';
-// An in-app path only: one leading slash, so `//host` and `/\host` cannot send anyone off-site.
-const IN_APP_PATH = /^\/(?![/\\])/;
+// An in-app path only: one leading slash, so `//host` and `/\host` cannot send anyone off-site,
+// and no whitespace or control characters, which browsers strip (`/<tab>/host` is `//host`).
+const IN_APP_PATH = /^\/(?![/\\])[^\s\p{Cc}]*$/u;
 
 export const safeNext = (value) =>
   typeof value === 'string' && IN_APP_PATH.test(value) ? value : null;

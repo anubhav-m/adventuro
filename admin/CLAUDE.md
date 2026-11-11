@@ -29,6 +29,7 @@ Install everything at its latest stable version.
 - `http://localhost:5174` must be an authorised JavaScript origin of the Google client ID.
 - The backend host in `vercel.json` is the placeholder `adventuro-backend.example.com`; replace it before deploying.
 - On Vercel, `vercel.json` rewrites `/api/*` to the backend and sends `X-Robots-Tag: noindex`. `index.html` also has `<meta name="robots" content="noindex">`.
+- `vercel.json` sends the same security headers as the customer app (CSP with the inline theme script's SHA-256 and Google Identity Services, `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`). Editing the inline script in `index.html` means updating its hash; `src/deployConfig.test.js` fails until you do.
 
 ## Folder structure
 
@@ -90,7 +91,7 @@ admin/src/
 │   ├── BookingsPage, BookingDetailPage
 │   ├── UsersPage, UserDetailPage
 │   └── NewsletterPage
-├── lib/ (errors.js, format.js, constants.js, schemas.js, storage.js, dashboardRange.js,
+├── lib/ (errors.js, format.js, constants.js, schemas.js, zod.js (`z` with jitless on; the only importer of 'zod'), storage.js, dashboardRange.js,
 │        queryClient.js, googleIdentity.js, cn.js, tourForm.js, gearForm.js, listParams.js,
 │        slugify.js, list.js, csv.js, download.js)
 └── test/ (setup.js, server.js, render.jsx, matchMedia.js, googleIdentity.js, fixtures.js, contentApi.js,
@@ -152,7 +153,7 @@ admin/e2e/           # Playwright specs + fixtures.js; screenshots/ is gitignore
 
 How it is built:
 - `useGoogleSignIn` checks the role inside the mutation: a non-admin is signed out and the mutation fails with `forbiddenError()`, so that account never becomes the cached session.
-- `useAdminSession` is the one place that reads the session for the guard and the login page. A signed-in non-admin (a customer's cookie from the other app) is signed out there; it reads as `loading` until that finishes and then as `signedOut` with `denied: true`. `RequireAdmin` passes `denied` to `/login` in the navigation state, and the login page shows the message for either. If the sign-out fails, an error with Retry shows and the layout still does not.
+- `useAdminSession` is the one place that reads the session for the guard and the login page. A signed-in non-admin (a customer who signed in on this app) is signed out there; it reads as `loading` until that finishes and then as `signedOut` with `denied: true`. `RequireAdmin` passes `denied` to `/login` in the navigation state, and the login page shows the message for either. If the sign-out fails, an error with Retry shows and the layout still does not.
 - There is no `next` param: after sign-in the admin lands on the dashboard.
 - Sign out (topbar) ends the session and removes every other cached query; the guard then navigates.
 - `lib/queryClient.js`: `UNAUTHENTICATED` on any request clears `me`. `FORBIDDEN` re-reads it, so an admin whose role was removed is turned away by the guard.
@@ -253,6 +254,7 @@ How it is built:
 ## Security
 
 - No `dangerouslySetInnerHTML`. Content entered by admins renders as text everywhere.
+- No `eval` or `new Function`: the CSP forbids them. Import `z` from `lib/zod.js`, never from `'zod'` (ESLint enforces it).
 - Never store tokens in JS (the session is an httpOnly cookie). Only non-secret `VITE_` vars.
 - Run `npm audit` and keep it at 0 vulnerabilities.
 
